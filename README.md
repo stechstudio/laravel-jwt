@@ -109,12 +109,15 @@ $token->validate('expected-token-id'); // Throws exceptions for any validation f
  
  Once you've parsed and validated a token, you can retrieve all token claims with `getClaims` or simply `toArray`. 
  
- If you'd like to just retrieve your custom payload, use `getPayload`;
+ If you'd like to just retrieve your custom payload claims, use `getPayload`;
  
  ```php
+ // Make our string token
  $jwt = JWT::get('token-id', ['foo' => 'bar']);
  
+ // Parse it and validate
  $token = JWT::parse($jwt)->validate('token-id');
  
+ // Ignore registered claims, just get our custom claims
  $token->getPayload(); // [ foo => bar ]
  ```
