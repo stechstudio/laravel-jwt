@@ -84,6 +84,9 @@ class ParsedToken
         return $this->isValid;
     }
 
+    /**
+     * @throws JwtValidationException
+     */
     protected function validateRequiredClaims()
     {
         if (!$this->token->hasClaim('exp')) {
@@ -186,6 +189,19 @@ class ParsedToken
     public function getPayload()
     {
         return array_diff_key($this->toArray(), array_flip(['jti','iss','aud','sub','iat','nbf','exp']));
+    }
+
+    /**
+     * @param $name
+     * @param null $default
+     *
+     * @return mixed|null
+     */
+    public function get($name, $default = null)
+    {
+        return $this->token->hasClaim($name)
+            ? $this->token->getClaim($name)
+            : $default;
     }
 
     /**

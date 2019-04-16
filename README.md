@@ -121,3 +121,62 @@ $token->validate('expected-token-id'); // Throws exceptions for any validation f
  // Ignore registered claims, just get our custom claims
  $token->getPayload(); // [ foo => bar ]
  ```
+ 
+ Or to retrieve just one claim, use `get` passing in the name of the claim. You can optionally pass in a default value as the second parameter;
+ 
+ ```php
+ $token->get("foo"); // bar
+ 
+ $token->get("invalid"); // null
+ 
+ $token->get("invalid", "quz"); // quz
+ ```
+ 
+## Route middleware
+
+You can use the included `jwt` middleware to validate a JWT request. The middleware will look for the JWT in a number of places:
+ 
+1) As a request parameter named `jwt` or `token`
+2) As a route paramater named `jwt` or `token`
+3) In the Authorization header either as `Token JWT` or `Bearer :base64encodedJWT`
+
+If a token is found in any of these locations it will be parsed and validated. 
+
+### Token ID
+
+By default the token ID will be expected to match the route name.
+
+For example, with this following route the token will need an ID of `my.home`:
+
+```php
+Route::get('/home', 'Controller@home')->name('my.home')->middleware('jwt');
+```
+
+You can also specify the required ID by passing it as a middleware parameter:
+
+```php
+Route::get('/home', 'Controller@home')->middleware('jwt:expected-id');
+```
+
+## Access claims on request
+
+The Laravel `Request` has a `getClaim` macro on it so you can grab claims from anywhere.
+
+Example when injecting `$request` into a controller method:
+
+```php
+use Illuminate\Http\Request;
+
+class Controller {
+    public function home(Request $request)
+    {
+        echo $request->getClaim('aud'); // The token audience    
+    }
+}
+```
+
+Additionally the token payload (custom claims added to the JWT, not part of the core registered claim set) is merged onto the request attributes.
+
+So you can directly access `$request->foo` or `$request->get('foo')` or even `request('foo')` using the global request helper.
+
+_**Note**: Yes this means we _really_ trust the payload in a validated JWT, since that might potentially override normal request parameters._  

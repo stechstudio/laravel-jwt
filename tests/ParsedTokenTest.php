@@ -48,4 +48,14 @@ class ParsedTokenTest extends \Orchestra\Testbench\TestCase
         $this->assertArrayHasKey('foo', $token->getPayload());
         $this->assertEquals('bar', $token->getPayload()['foo']);
     }
+
+    public function testGet()
+    {
+        /** @var \STS\JWT\ParsedToken $token */
+        $token = JWT::parse(JWT::get("test-id", ["foo" => "bar"]));
+
+        $this->assertEquals("bar", $token->get("foo"));
+        $this->assertNull($token->get("quz"));
+        $this->assertEquals("default", $token->get("quz", "default"));
+    }
 }
