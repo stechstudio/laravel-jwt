@@ -30,6 +30,13 @@ class ClientTest extends \Orchestra\Testbench\TestCase
         $this->assertEquals('thisissigningkey', JWT::getSigningKey());
     }
 
+    public function testBase64SigningKey()
+    {
+        config(['jwt.key' => 'base64:' . base64_encode('thisissigningkey')]);
+
+        $this->assertEquals('thisissigningkey', JWT::getSigningKey());
+    }
+
     public function testTokenAlwaysSigned()
     {
         /** @var \Lcobucci\JWT\Token $token */

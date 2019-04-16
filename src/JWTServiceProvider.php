@@ -4,6 +4,7 @@ namespace STS\JWT;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Str;
 use STS\JWT\Exceptions\JwtValidationException;
 
 class JWTServiceProvider extends ServiceProvider
@@ -25,8 +26,12 @@ class JWTServiceProvider extends ServiceProvider
         $this->mergeConfigFrom(__DIR__.'/../config/config.php', 'jwt');
 
         $this->app->bind(Client::class, function ($app) {
+            if (Str::startsWith($key = config('jwt.key'), 'base64:')) {
+                $key = base64_decode(substr($key, 7));
+            }
+
             return new Client(
-                config('jwt.key'),
+                $key,
                 config('jwt.lifetime'),
                 config('jwt.issuer'),
                 config('jwt.audience')
