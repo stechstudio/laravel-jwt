@@ -52,10 +52,12 @@ $jwt = JWT::get('token-id', ['anything' => 'here'], Carbon\Carbon::now()->addMin
 If you are generating a JWT that will be consumed by a different app (very common use case in our company) you can specify the signing key as the fourth parameter.
 
 ```php
-$jwt = JWT::get('token-id', ['anything' => 'here'], 3600, config('services.otherapp.key');
+$jwt = JWT::get('token-id', ['anything' => 'here'], 3600, config('services.otherapp.key'));
 ```
 
 ## Configuration
+
+This package tries to pick sane defaults, while also allowing you to change configs through your .env file.
 
 **Signature key**
 
@@ -63,7 +65,7 @@ Every token is signed, that's a strong opinion of this package. By default the `
 
 **Lifetime**
 
-Default lifetime is 600 seconds / 10 minutes. You can change the default by specifying the number of seconds as `JWT_LIFETIME` in your .env file.
+Default lifetime is 600 seconds / 10 minutes. You can change the default by specifying the number of seconds as `JWT_LIFETIME`.
 
 **Issuer**
 
@@ -75,7 +77,7 @@ The default token issuer (`iss` claim) is your `APP_NAME` lowercase. You can spe
  
  ## Building tokens fluently
  
- So far we've looked at the `JWT::get()` helper method which is super quick, yet limited. 
+ So far we've looked at the `JWT::get()` helper method which is super quick for simple needs. 
  
  For more control over your token you can create it fluently instead. 
  
@@ -151,7 +153,7 @@ $token->validate('expected-token-id'); // Throws exceptions for any validation f
  
 ## Route middleware
 
-We frequently use JWTs to authorize a request. This might be generated and consumed by the same app, or it is frequently cross-app authorization.
+We frequently use JWTs to authorize a request. These are sometimes generated and consumed by the same app, but more frequently they are for cross-app authorization.
 
 You can use the included `jwt` middleware to validate a JWT request. The middleware will look for the JWT in a number of places:
  
