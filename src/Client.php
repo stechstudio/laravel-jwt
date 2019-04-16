@@ -151,6 +151,14 @@ class Client
     }
 
     /**
+     * @return string
+     */
+    public function __toString()
+    {
+        return (string) $this->getToken();
+    }
+
+    /**
      * @param int|Carbon $lifetime
      *
      * @return $this

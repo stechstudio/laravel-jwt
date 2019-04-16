@@ -4,7 +4,7 @@ return [
     'key' => env('JWT_SIGNING_KEY', env('APP_KEY')),
 
     // Default lifetime in seconds
-    'lifetime' => 600,
+    'lifetime' => env('JWT_LIFETIME', 600),
 
     // Default audience name for our own app
     'audience' => env('JWT_AUDIENCE', strtolower(env('APP_NAME'))),

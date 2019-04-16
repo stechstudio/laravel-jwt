@@ -50,7 +50,7 @@ class ParsedToken
      *
      * @param ValidationData|string $validationInput
      *
-     * @return bool
+     * @return ParsedToken
      * @throws JwtValidationException
      * @throws JwtExpiredException
      */
@@ -63,7 +63,7 @@ class ParsedToken
 
         $this->isValid = true;
 
-        return true;
+        return $this;
     }
 
     /**
@@ -168,6 +168,24 @@ class ParsedToken
         }
 
         return $validationData;
+    }
+
+    /**
+     * @return array
+     */
+    public function toArray()
+    {
+        return array_map(function($claim) {
+            return (string) $claim;
+        }, $this->token->getClaims());
+    }
+
+    /**
+     * @return array
+     */
+    public function getPayload()
+    {
+        return array_diff_key($this->toArray(), array_flip(['jti','iss','aud','sub','iat','nbf','exp']));
     }
 
     /**
