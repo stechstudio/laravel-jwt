@@ -56,7 +56,22 @@ class RequestMacroTest extends \Orchestra\Testbench\TestCase
         $request->setRouteResolver(function() use($route) { return $route; });
 
         $middleware->handle($request, function() { return "success"; }, 'test-id');
-
         $this->assertEquals('bar', $request->foo);
+    }
+
+    public function testPayloadNotMergedOntoRequest()
+    {
+        config(['jwt.merge' => false]);
+
+        $middleware = new \STS\JWT\JwtValidateMiddleware();
+        $request = new \Illuminate\Http\Request();
+        $route = new \Illuminate\Routing\Route([], '', []);
+
+        // Set the jwt id to match our route name
+        $route->parameters = ['jwt' => JWT::get('test-id', ['foo' => 'bar'])];
+        $request->setRouteResolver(function() use($route) { return $route; });
+
+        $middleware->handle($request, function() { return "success"; }, 'test-id');
+        $this->assertNull($request->foo);
     }
 }

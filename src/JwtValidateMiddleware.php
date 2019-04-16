@@ -28,7 +28,10 @@ class JwtValidateMiddleware
         )->validate($id);
 
         $request->offsetSet('jwt', $token);
-        $request->merge($token->getPayload());
+
+        if(config('jwt.merge')) {
+            $request->merge($token->getPayload());
+        }
 
         return $next($request);
     }

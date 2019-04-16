@@ -11,4 +11,6 @@ return [
 
     // Default issuer name for our own app
     'issuer' => env('JWT_ISSUER', strtolower(env('APP_NAME'))),
+
+    'merge' => env('JWT_MERGE_PAYLOAD', true),
 ];

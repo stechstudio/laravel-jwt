@@ -17,19 +17,23 @@ This package wraps the excellent [lcobucci/jwt](https://github.com/lcobucci/jwt)
 
 ## Quickstart
 
-Get it installed:
+### Installation
 
 ```php
 composer require stechstudio/laravel-jwt
 ```
 
-And now generate a super-simple JWT:
+### Simple example
+
+You can generate a simple JWT like this:
 
 ```php
 $jwt = JWT::get('token-id', ['anything' => 'here']);
 ```
 
 This will generate a token with the ID provided and an array of claims, returning the string token.
+
+### Change lifetime
 
 The default token expiration is set to 10 minutes which you can configure, or you can specify a custom lifetime value as a third parameter when creating the token:
 
@@ -43,11 +47,19 @@ This token will expire in one hour. You can also specify the lifetime with Carbo
 $jwt = JWT::get('token-id', ['anything' => 'here'], Carbon\Carbon::now()->addMinutes(60));
 ```
 
+### Change signing key
+
+If you are generating a JWT that will be consumed by a different app (very common use case in our company) you can specify the signing key as the fourth parameter.
+
+```php
+$jwt = JWT::get('token-id', ['anything' => 'here'], 3600, config('services.otherapp.key');
+```
+
 ## Configuration
 
 **Signature key**
 
-Every token is signed, that's is one strong opinion of this package. By default the `APP_KEY` in your .env file is used for the signing key, or you can provide a dedicated `JWT_SIGNING_KEY` instead.
+Every token is signed, that's a strong opinion of this package. By default the `APP_KEY` in your .env file is used for the signing key, or you can provide a dedicated `JWT_SIGNING_KEY` instead.
 
 **Lifetime**
 
@@ -106,8 +118,9 @@ $token->validate('expected-token-id'); // Throws exceptions for any validation f
  At this point you can be certain that the token:
   
  1) Has the expected ID
- 2) Is signed, and the signature is verified (using the configured signature key)
- 3) Has an expiration claim, and has not yet expired 
+ 2) Is intended for your app (`aud` claim matches the configured audience)
+ 3) Is signed, and the signature is verified (using the configured signature key)
+ 4) Has an expiration claim, and has not yet expired 
  
  ## Retrieving claims
  
@@ -138,6 +151,8 @@ $token->validate('expected-token-id'); // Throws exceptions for any validation f
  
 ## Route middleware
 
+We frequently use JWTs to authorize a request. This might be generated and consumed by the same app, or it is frequently cross-app authorization.
+
 You can use the included `jwt` middleware to validate a JWT request. The middleware will look for the JWT in a number of places:
  
 1) As a request parameter named `jwt` or `token`
@@ -164,6 +179,8 @@ Route::get('/home', 'Controller@home')->middleware('jwt:expected-id');
 
 ## Access claims on request
 
+### All token claims
+
 The Laravel `Request` has a `getClaim` macro on it so you can grab claims from anywhere.
 
 Example when injecting `$request` into a controller method:
@@ -179,8 +196,10 @@ class Controller {
 }
 ```
 
-Additionally the token payload (custom claims added to the JWT, not part of the core registered claim set) is merged onto the request attributes.
+### Custom payload merged
 
-So you can directly access `$request->foo` or `$request->get('foo')` or even `request('foo')` using the global request helper.
+The token payload (custom claims added to the JWT, not part of the core registered claim set) is merged onto the request attributes, so you can access these just like any other request attribute.
 
-_**Note**: Yes this means we _really_ trust the payload in a validated JWT, since that might potentially override normal request parameters._  
+If the JWT has a `foo` claim, you can directly access `$request->foo` or `$request->get('foo')` or even `request('foo')` using the global request helper.
+
+_**Note**: When the payload is merged onto the request, there is a chance that we are stomping on some existing request attributes. Because we **really** trust the payload in a validated JWT, we prefer this behavior. However if you want to disable set `JWT_MERGE_PAYLOAD=false` in your .env file._  
