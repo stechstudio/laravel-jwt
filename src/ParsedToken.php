@@ -10,15 +10,12 @@ use STS\JWT\Exceptions\JwtValidationException;
 use Lcobucci\JWT\Parser;
 use Lcobucci\JWT\Token;
 use Lcobucci\JWT\ValidationData;
-use Illuminate\Support\Traits\ForwardsCalls;
 
 /**
  *
  */
 class ParsedToken
 {
-    use ForwardsCalls;
-
     /** @var Token */
     protected $token;
 
@@ -212,6 +209,6 @@ class ParsedToken
      */
     public function __call($method, $parameters)
     {
-        return $this->forwardCallTo($this->token, $method, $parameters);
+        return call_user_func_array([$this->token, $method], $parameters);
     }
 }

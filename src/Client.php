@@ -3,7 +3,6 @@
 namespace STS\JWT;
 
 use Carbon\Carbon;
-use Illuminate\Support\Traits\ForwardsCalls;
 use Lcobucci\JWT\Signer;
 use Lcobucci\JWT\Signer\Hmac\Sha256;
 use Lcobucci\JWT\Builder as BaseBuilder;
@@ -13,8 +12,6 @@ use Lcobucci\JWT\Builder as BaseBuilder;
  */
 class Client
 {
-    use ForwardsCalls;
-
     /** @var BaseBuilder */
     protected $builder;
 
@@ -248,7 +245,7 @@ class Client
      */
     public function __call($method, $parameters)
     {
-        $result = $this->forwardCallTo($this->builder, $method, $parameters);
+        $result = call_user_func_array([$this->builder, $method], $parameters);
 
         return $result instanceof BaseBuilder
             ? $this
