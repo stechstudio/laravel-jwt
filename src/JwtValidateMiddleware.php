@@ -58,7 +58,7 @@ class JwtValidateMiddleware
         }
 
         // Authorization header
-        if (null != $request->header('Authorization')) {
+        if ($request->hasHeader('Authorization')) {
             return $this->parseAuthorizationHeader($request->header('Authorization'));
         }
 
