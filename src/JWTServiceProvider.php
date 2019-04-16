@@ -5,13 +5,12 @@ namespace STS\JWT;
 use Illuminate\Http\Request;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
-use STS\JWT\Exceptions\JwtValidationException;
 
 class JWTServiceProvider extends ServiceProvider
 {
     public function boot()
     {
-        $this->app['router']->aliasMiddleware('jwt', JwtValidationException::class);
+        $this->app['router']->aliasMiddleware('jwt', JwtValidateMiddleware::class);
 
         Request::macro('getClaim', function($name, $default = null) {
             return $this->get('jwt') instanceof ParsedToken
