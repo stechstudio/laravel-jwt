@@ -1,0 +1,35 @@
+{
+    "name": "stechstudio/laravel-jwt",
+    "description": "Simple helper package that makes it easy to generate and consume JWT tokens",
+    "type": "library",
+    "require": {
+        "lcobucci/jwt": "^3.2",
+        "illuminate/support": "^5.6"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^3.8",
+        "phpunit/phpunit": "^7.0"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Joseph",
+            "email": "joseph@stechstudio.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "STS\\JWT\\": "src"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "STS\\JWT\\JWTServiceProvider"
+            ],
+            "aliases": {
+                "JWT": "STS\\JWT\\JWTFacade"
+            }
+        }
+    }
+}
