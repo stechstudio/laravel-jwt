@@ -65,6 +65,7 @@ class Client
         $this->setLifetime($this->lifetime);
         $this->claims = [];
         $this->signingKey = $this->defaultSigningKey;
+        $this->isSigned = false;
 
         return $this;
     }
