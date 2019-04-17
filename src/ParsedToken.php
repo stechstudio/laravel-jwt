@@ -2,6 +2,7 @@
 
 namespace STS\JWT;
 
+use Config;
 use Exception;
 use Lcobucci\JWT\Claim\Validatable;
 use Lcobucci\JWT\Signer\Hmac\Sha256;
@@ -94,7 +95,7 @@ class ParsedToken
             throw new JwtValidationException("Token ID is missing", $this->token);
         }
 
-        if (!$this->token->hasClaim('aud')) {
+        if (Config::get('jwt.validate.audience') && !$this->token->hasClaim('aud')) {
             throw new JwtValidationException("Token audience is missing", $this->token);
         }
     }

@@ -13,4 +13,9 @@ return [
     'issuer' => env('JWT_ISSUER', strtolower(env('APP_NAME'))),
 
     'merge' => env('JWT_MERGE_PAYLOAD', true),
+
+    'validate' => [
+        // If you really need to avoid automatic audience validation
+        'audience' => env('JWT_VALIDATE_AUDIENCE', true),
+    ]
 ];

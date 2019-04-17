@@ -159,6 +159,7 @@ class ValidationTest extends \Orchestra\Testbench\TestCase
         $jwt = (string) (new \Lcobucci\JWT\Builder())
             ->setExpiration(time() + 60)
             ->setId('test-id')
+            ->sign(new \Lcobucci\JWT\Signer\Hmac\Sha256(), 'thisissigningkey')
             ->getToken();
 
         /** @var \STS\JWT\ParsedToken $token */
@@ -169,6 +170,23 @@ class ValidationTest extends \Orchestra\Testbench\TestCase
         $this->expectException(\STS\JWT\Exceptions\JwtValidationException::class);
         $this->expectExceptionMessage("Token audience is missing");
         $token->validate('test-id');
+    }
+
+    public function testNoAudienceValidation()
+    {
+        config(['jwt.validate.audience' => false]);
+
+        $jwt = (string) (new \Lcobucci\JWT\Builder())
+            ->setExpiration(time() + 60)
+            ->setId('test-id')
+            ->sign(new \Lcobucci\JWT\Signer\Hmac\Sha256(), 'thisissigningkey')
+            ->getToken();
+
+        /** @var \STS\JWT\ParsedToken $token */
+        $token = JWT::parse($jwt);
+
+        $token->validate('test-id');
+        $this->assertTrue($token->isValid('test-id'));
     }
 
     public function testMissingSignature()
