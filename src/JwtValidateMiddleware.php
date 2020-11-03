@@ -65,7 +65,7 @@ class JwtValidateMiddleware
             return $this->parseAuthorizationHeader($request->header('Authorization'));
         }
 
-        throw new UnauthorizedHttpException("Token not provided");
+        throw new UnauthorizedHttpException("","Token not provided");
     }
 
     /**
