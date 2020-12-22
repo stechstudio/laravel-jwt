@@ -3,7 +3,7 @@
     "description": "Simple helper package that makes it easy to generate and consume JWT tokens",
     "type": "library",
     "require": {
-        "lcobucci/jwt": "^3.2",
+        "lcobucci/jwt": "3.2.*|3.3.*",
         "illuminate/support": "^5.4|^6.0|^7.0|^8.0"
     },
     "require-dev": {
