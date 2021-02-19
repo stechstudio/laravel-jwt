@@ -47,17 +47,18 @@ class ParsedToken
      * Validates the token and throws exceptions for any failure encountered
      *
      * @param ValidationData|string $validationInput
+     * @param null $signingKey
      *
      * @return ParsedToken
-     * @throws JwtValidationException
      * @throws JwtExpiredException
+     * @throws JwtValidationException
      */
-    public function validate($validationInput)
+    public function validate($validationInput, $signingKey = null)
     {
         $this->validateRequiredClaims();
         $this->validateExpiration();
         $this->validateData($this->buildValidationData($validationInput));
-        $this->verifySignature();
+        $this->verifySignature($signingKey);
 
         $this->isValid = true;
 
@@ -68,13 +69,14 @@ class ParsedToken
      * Performs validation and returns a boolean. Suppresses any exceptions thrown from validation.
      *
      * @param $validationInput
+     * @param null $signingKey
      *
      * @return bool
      */
-    public function isValid($validationInput)
+    public function isValid($validationInput, $signingKey = null)
     {
         try {
-            $this->validate($validationInput);
+            $this->validate($validationInput, $signingKey);
         } catch (Exception $e) {
             return false;
         }
@@ -127,11 +129,13 @@ class ParsedToken
     }
 
     /**
+     * @param null $signingKey
+     *
      * @throws JwtValidationException
      */
-    protected function verifySignature()
+    protected function verifySignature($signingKey = null)
     {
-        if (!$this->token->verify(new Sha256(), JWTFacade::getSigningKey())) {
+        if (!$this->token->verify(new Sha256(), $signingKey ?? JWTFacade::getSigningKey())) {
             throw new JwtValidationException("JWT signature is invalid", $this->token);
         }
     }

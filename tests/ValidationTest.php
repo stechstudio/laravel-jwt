@@ -100,6 +100,14 @@ class ValidationTest extends \Orchestra\Testbench\TestCase
         $token->validate('test-id');
     }
 
+    public function testPassAlternateSigningKey()
+    {
+        /** @var \STS\JWT\ParsedToken $token */
+        $token = JWT::parse(JWT::setSigningKey("foobar")->get('test-id'));
+
+        $this->assertTrue($token->isValid('test-id', "foobar"));
+    }
+
     public function testInvalidPayload()
     {
         /** @var \STS\JWT\ParsedToken $token */
