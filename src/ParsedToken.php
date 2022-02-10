@@ -17,26 +17,12 @@ use Lcobucci\JWT\ValidationData;
  */
 class ParsedToken
 {
-    /** @var Token */
-    protected $token;
+    protected bool $isValid = false;
 
-    /** @var bool */
-    protected $isValid = false;
+    public function __construct(protected Token $token)
+    {}
 
-    /**
-     * @param Token $token
-     */
-    public function __construct(Token $token)
-    {
-        $this->token = $token;
-    }
-
-    /**
-     * @param string $jwt
-     *
-     * @return ParsedToken
-     */
-    public static function fromString($jwt)
+    public static function fromString($jwt): ParsedToken
     {
         return new static(
             (new Parser())->parse($jwt)
@@ -53,7 +39,7 @@ class ParsedToken
      * @throws JwtExpiredException
      * @throws JwtValidationException
      */
-    public function validate($validationInput, $signingKey = null)
+    public function validate($validationInput, $signingKey = null): ParsedToken
     {
         $this->validateRequiredClaims();
         $this->validateExpiration();
@@ -70,10 +56,9 @@ class ParsedToken
      *
      * @param $validationInput
      * @param null $signingKey
-     *
      * @return bool
      */
-    public function isValid($validationInput, $signingKey = null)
+    public function isValid($validationInput, $signingKey = null): bool
     {
         try {
             $this->validate($validationInput, $signingKey);
@@ -87,7 +72,7 @@ class ParsedToken
     /**
      * @throws JwtValidationException
      */
-    protected function validateRequiredClaims()
+    protected function validateRequiredClaims(): void
     {
         if (!$this->token->hasClaim('exp')) {
             throw new JwtValidationException("Token expiration is missing", $this->token);
@@ -105,7 +90,7 @@ class ParsedToken
     /**
      * @throws JwtExpiredException
      */
-    protected function validateExpiration()
+    protected function validateExpiration(): void
     {
         // Yes this will be validated in the `validateData` loop, however I like having a dedicated error message
         // for this quite-common scenario
@@ -119,7 +104,7 @@ class ParsedToken
      *
      * @throws JwtValidationException
      */
-    protected function validateData(ValidationData $validationData)
+    protected function validateData(ValidationData $validationData): void
     {
         foreach ($this->getValidatableClaims() as $claim) {
             if (!$claim->validate($validationData)) {
@@ -133,7 +118,7 @@ class ParsedToken
      *
      * @throws JwtValidationException
      */
-    protected function verifySignature($signingKey = null)
+    protected function verifySignature($signingKey = null): void
     {
         if (!$this->token->verify(new Sha256(), $signingKey ?? JWTFacade::getSigningKey())) {
             throw new JwtValidationException("JWT signature is invalid", $this->token);
@@ -143,7 +128,7 @@ class ParsedToken
     /**
      * @return \Generator
      */
-    protected function getValidatableClaims()
+    protected function getValidatableClaims(): \Generator
     {
         foreach ($this->token->getClaims() as $claim) {
             if ($claim instanceof Validatable) {
@@ -157,7 +142,7 @@ class ParsedToken
      *
      * @return ValidationData
      */
-    protected function buildValidationData($validationInput)
+    protected function buildValidationData($validationInput): ValidationData
     {
         if (is_string($validationInput)) {
             $validationData = new ValidationData();
@@ -175,20 +160,12 @@ class ParsedToken
         return $validationData;
     }
 
-    /**
-     * @return array
-     */
-    public function toArray()
+    public function toArray(): array
     {
-        return array_map(function($claim) {
-            return (string) $claim;
-        }, $this->token->getClaims());
+        return array_map(fn($claim) => (string) $claim, $this->token->getClaims());
     }
 
-    /**
-     * @return array
-     */
-    public function getPayload()
+    public function getPayload(): array
     {
         return array_diff_key($this->toArray(), array_flip(['jti','iss','aud','sub','iat','nbf','exp']));
     }

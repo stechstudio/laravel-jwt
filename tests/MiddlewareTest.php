@@ -85,7 +85,7 @@ class MiddlewareTest extends \Orchestra\Testbench\TestCase
         // Set the jwt id to match our route name
         $route->parameters = ['jwt' => JWT::get('my.route')];
         $route->action = ['as' => 'my.route'];
-        $request->setRouteResolver(function() use($route) { return $route; });
+        $request->setRouteResolver(fn() => $route);
 
         $this->assertEquals("success", $middleware->handle($request, function() { return "success"; }));
 
