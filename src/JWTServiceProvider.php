@@ -12,9 +12,13 @@ class JWTServiceProvider extends ServiceProvider
     {
         $this->app['router']->aliasMiddleware('jwt', JwtValidateMiddleware::class);
 
+        Request::macro('setToken', function(ParsedToken $token) {
+            $this->token = $token;
+        });
+
         Request::macro('getClaim', function($name, $default = null) {
-            return $this->get('jwt') instanceof ParsedToken
-                ? $this->get('jwt')->get($name, $default)
+            return $this->token && $this->token instanceof ParsedToken
+                ? $this->token->get($name, $default)
                 : $default;
         });
     }
