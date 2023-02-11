@@ -1,5 +1,8 @@
 <?php
 
+use Lcobucci\JWT\Validation\ConstraintViolation;
+use Lcobucci\JWT\Validation\RequiredConstraintsViolated;
+
 class MiddlewareTest extends \Orchestra\Testbench\TestCase
 {
     protected function getPackageProviders($app)
@@ -92,8 +95,8 @@ class MiddlewareTest extends \Orchestra\Testbench\TestCase
         // Change the route name and the JWT won't pass
         $route->action = ['as' => 'new.name'];
 
-        $this->expectException(\STS\JWT\Exceptions\JwtValidationException::class);
-        $this->expectExceptionMessage('JWT claim [jti] is invalid');
+        $this->expectException(ConstraintViolation::class);
+        $this->expectExceptionMessage('The token is not identified with the expected ID');
         $this->assertEquals("success", $middleware->handle($request, function() { return "success"; }));
     }
 
@@ -109,8 +112,8 @@ class MiddlewareTest extends \Orchestra\Testbench\TestCase
 
         $this->assertEquals("success", $middleware->handle($request, function() { return "success"; }, 'test-id'));
 
-        $this->expectException(\STS\JWT\Exceptions\JwtValidationException::class);
-        $this->expectExceptionMessage('JWT claim [jti] is invalid');
+        $this->expectException(ConstraintViolation::class);
+        $this->expectExceptionMessage('The token is not identified with the expected ID');
         $this->assertEquals("success", $middleware->handle($request, function() { return "success"; }, 'different-id'));
     }
 }

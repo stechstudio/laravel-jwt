@@ -163,12 +163,7 @@ class Client
             : $result;
     }
 
-    /**
-     * @param $jwt
-     *
-     * @return ParsedToken
-     */
-    public function parse($jwt)
+    public function parse(string $jwt): ParsedToken
     {
         return ParsedToken::fromString($jwt);
     }

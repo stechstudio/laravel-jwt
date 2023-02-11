@@ -1,5 +1,7 @@
 <?php
 
+use STS\JWT\Facades\JWT;
+
 class ParsedTokenTest extends \Orchestra\Testbench\TestCase
 {
     protected function getPackageProviders($app)
@@ -17,7 +19,7 @@ class ParsedTokenTest extends \Orchestra\Testbench\TestCase
     protected function getEnvironmentSetUp($app)
     {
         $app['config']->set([
-            'jwt.key'      => 'thisissigningkey',
+            'jwt.key'      => 'thisissigningkeythisissigningkey',
             'jwt.audience' => 'myappaud',
             'jwt.issuer'   => 'myappiss'
         ]);
@@ -30,7 +32,7 @@ class ParsedTokenTest extends \Orchestra\Testbench\TestCase
 
         $this->assertTrue(is_array($token->toArray()));
 
-        // We expect to have exp, jti, aud, and iss... plust the one extra 'foo' claim
+        // We expect to have exp, jti, aud, and iss... plus the one extra 'foo' claim
         $this->assertEquals(5, count($token->toArray()));
         $this->assertArrayHasKey('foo', $token->toArray());
         $this->assertEquals('bar', $token->toArray()['foo']);

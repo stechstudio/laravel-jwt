@@ -1,5 +1,14 @@
 <?php
 
+use Carbon\CarbonImmutable;
+use Lcobucci\JWT\Encoding\ChainedFormatter;
+use Lcobucci\JWT\Encoding\JoseEncoder;
+use Lcobucci\JWT\Signer\Hmac\Sha256;
+use Lcobucci\JWT\Signer\Key\InMemory;
+use Lcobucci\JWT\Token\Builder;
+use Lcobucci\JWT\Validation\ConstraintViolation;
+use STS\JWT\Facades\JWT;
+
 class ValidationTest extends \Orchestra\Testbench\TestCase
 {
     protected function getPackageProviders($app)
@@ -17,7 +26,7 @@ class ValidationTest extends \Orchestra\Testbench\TestCase
     protected function getEnvironmentSetUp($app)
     {
         $app['config']->set([
-            'jwt.key'      => 'thisissigningkey',
+            'jwt.key'      => 'thisissigningkeythisissigningkey',
             'jwt.audience' => 'myappaud',
             'jwt.issuer'   => 'myappiss'
         ]);
@@ -37,7 +46,7 @@ class ValidationTest extends \Orchestra\Testbench\TestCase
 
     public function testBorkedToken()
     {
-        $this->expectExceptionMessage("Error while decoding to JSON");
+        $this->expectExceptionMessage("Error while decoding from Base64Url, invalid base64 characters detected");
         JWT::parse("firstpart.secondpart.thirdpart");
     }
 
@@ -59,8 +68,8 @@ class ValidationTest extends \Orchestra\Testbench\TestCase
 
         $this->assertFalse($token->isValid('test-id'));
 
-        $this->expectException(\STS\JWT\Exceptions\JwtExpiredException::class);
-        $this->expectExceptionMessage("Token has expired");
+        $this->expectException(ConstraintViolation::class);
+        $this->expectExceptionMessage("The token is expired");
         $token->validate('test-id');
     }
 
@@ -71,112 +80,75 @@ class ValidationTest extends \Orchestra\Testbench\TestCase
 
         $this->assertFalse($token->isValid('different-id'));
 
-        $this->expectException(\STS\JWT\Exceptions\JwtValidationException::class);
-        $this->expectExceptionMessage("JWT claim [jti] is invalid");
+        $this->expectException(ConstraintViolation::class);
+        $this->expectExceptionMessage("The token is not identified with the expected ID");
         $token->validate('different-id');
     }
 
     public function testInvalidAudienceMismatch()
     {
         /** @var \STS\JWT\ParsedToken $token */
-        $token = JWT::parse(JWT::setAudience("foobar")->get('test-id'));
+        $token = JWT::parse(JWT::permittedFor("foobar")->get('test-id'));
 
         $this->assertFalse($token->isValid('test-id'));
 
-        $this->expectException(\STS\JWT\Exceptions\JwtValidationException::class);
-        $this->expectExceptionMessage("JWT claim [aud] is invalid");
+        $this->expectException(ConstraintViolation::class);
+        $this->expectExceptionMessage("The token is not allowed to be used by this audience");
         $token->validate('test-id');
     }
 
     public function testInvalidSignature()
     {
         /** @var \STS\JWT\ParsedToken $token */
-        $token = JWT::parse(JWT::setSigningKey("foobar")->get('test-id'));
+        $token = JWT::parse(JWT::signWith("foobarfoobarfoobarfoobarfoobar!!")->get('test-id'));
 
         $this->assertFalse($token->isValid('test-id'));
 
-        $this->expectException(\STS\JWT\Exceptions\JwtValidationException::class);
-        $this->expectExceptionMessage("JWT signature is invalid");
+        $this->expectException(ConstraintViolation::class);
+        $this->expectExceptionMessage("Token signature mismatch");
         $token->validate('test-id');
     }
 
     public function testPassAlternateSigningKey()
     {
         /** @var \STS\JWT\ParsedToken $token */
-        $token = JWT::parse(JWT::setSigningKey("foobar")->get('test-id'));
+        $token = JWT::parse(JWT::signWith("foobarfoobarfoobarfoobarfoobar!!")->get('test-id'));
 
-        $this->assertTrue($token->isValid('test-id', "foobar"));
-    }
-
-    public function testInvalidPayload()
-    {
-        /** @var \STS\JWT\ParsedToken $token */
-        $token = JWT::parse(JWT::setSubject("foobar")->get('test-id'));
-
-        // initially this is find
-        $this->assertTrue($token->isValid('test-id'));
-
-        // build a custom set of validation data requirements
-        $data = new \Lcobucci\JWT\ValidationData();
-        $data->setId('test-id');
-        $data->setSubject("baz");
-
-        $this->assertFalse($token->isValid($data));
-
-        $this->expectException(\STS\JWT\Exceptions\JwtValidationException::class);
-        $this->expectExceptionMessage("JWT claim [sub] is invalid");
-        $token->validate($data);
+        $this->assertTrue($token->isValid('test-id', "foobarfoobarfoobarfoobarfoobar!!"));
     }
 
     // When we create a token with our own JWT client it enforces a few things. Let's now create one with the Builder
     // directly, NOT adding the attributes we normally enforce, and ensure they are caught on the validation side.
 
-    public function testMissingExpiration()
+    public function testMissingAudience()
     {
         // Plain token with nothing supplied
-        $jwt = (string) (new \Lcobucci\JWT\Builder())->getToken();
+        $jwt = (new Builder(new JoseEncoder(), ChainedFormatter::default()))
+            ->getToken(new Sha256(), InMemory::plainText('thisissigningkeythisissigningkey'))->toString();
 
         /** @var \STS\JWT\ParsedToken $token */
         $token = JWT::parse($jwt);
 
         $this->assertFalse($token->isValid('test-id'));
 
-        $this->expectException(\STS\JWT\Exceptions\JwtValidationException::class);
-        $this->expectExceptionMessage("Token expiration is missing");
+        $this->expectException(ConstraintViolation::class);
+        $this->expectExceptionMessage("The token is not allowed to be used by this audience");
         $token->validate('test-id');
     }
 
     public function testMissingID()
     {
-        $jwt = (string) (new \Lcobucci\JWT\Builder())
-            ->setExpiration(time() + 60)
-            ->getToken();
+        $jwt = (new Builder(new JoseEncoder(), ChainedFormatter::default()))
+            ->permittedFor('myappaud')
+            ->getToken(new Sha256(), InMemory::plainText('thisissigningkeythisissigningkey'))->toString();
 
         /** @var \STS\JWT\ParsedToken $token */
         $token = JWT::parse($jwt);
 
         $this->assertFalse($token->isValid('test-id'));
 
-        $this->expectException(\STS\JWT\Exceptions\JwtValidationException::class);
-        $this->expectExceptionMessage("Token ID is missing");
-        $token->validate('test-id');
-    }
-
-    public function testMissingAudience()
-    {
-        $jwt = (string) (new \Lcobucci\JWT\Builder())
-            ->setExpiration(time() + 60)
-            ->setId('test-id')
-            ->sign(new \Lcobucci\JWT\Signer\Hmac\Sha256(), 'thisissigningkey')
-            ->getToken();
-
-        /** @var \STS\JWT\ParsedToken $token */
-        $token = JWT::parse($jwt);
-
-        $this->assertFalse($token->isValid('test-id'));
-
-        $this->expectException(\STS\JWT\Exceptions\JwtValidationException::class);
-        $this->expectExceptionMessage("Token audience is missing");
+        $this->expectException(ConstraintViolation::class);
+        $this->expectExceptionMessage("The token is not identified with the expected ID");
         $token->validate('test-id');
     }
 
@@ -184,34 +156,14 @@ class ValidationTest extends \Orchestra\Testbench\TestCase
     {
         config(['jwt.validate.audience' => false]);
 
-        $jwt = (string) (new \Lcobucci\JWT\Builder())
-            ->setExpiration(time() + 60)
-            ->setId('test-id')
-            ->sign(new \Lcobucci\JWT\Signer\Hmac\Sha256(), 'thisissigningkey')
-            ->getToken();
+        $jwt = (new Builder(new JoseEncoder(), ChainedFormatter::default()))
+            ->identifiedBy('test-id')
+            ->getToken(new Sha256(), InMemory::plainText('thisissigningkeythisissigningkey'))->toString();
 
         /** @var \STS\JWT\ParsedToken $token */
         $token = JWT::parse($jwt);
 
         $token->validate('test-id');
         $this->assertTrue($token->isValid('test-id'));
-    }
-
-    public function testMissingSignature()
-    {
-        $jwt = (string) (new \Lcobucci\JWT\Builder())
-            ->setExpiration(time() + 60)
-            ->setId('test-id')
-            ->setAudience('myappaud')
-            ->getToken();
-
-        /** @var \STS\JWT\ParsedToken $token */
-        $token = JWT::parse($jwt);
-
-        $this->assertFalse($token->isValid('test-id'));
-
-        $this->expectException(BadMethodCallException::class);
-        $this->expectExceptionMessage("This token is not signed");
-        $token->validate('test-id');
     }
 }

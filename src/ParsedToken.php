@@ -2,50 +2,43 @@
 
 namespace STS\JWT;
 
-use Config;
+use DateTimeImmutable;
 use Exception;
-use Lcobucci\JWT\Claim\Validatable;
+use Illuminate\Support\Arr;
+use Lcobucci\Clock\SystemClock;
+use Lcobucci\JWT\Encoding\JoseEncoder;
 use Lcobucci\JWT\Signer\Hmac\Sha256;
+use Lcobucci\JWT\Signer\Key\InMemory;
+use Lcobucci\JWT\Token\Plain;
+use Lcobucci\JWT\Validation\Constraint\IdentifiedBy;
+use Lcobucci\JWT\Validation\Constraint\LooseValidAt;
+use Lcobucci\JWT\Validation\Constraint\PermittedFor;
+use Lcobucci\JWT\Validation\Constraint\SignedWith;
+use Lcobucci\JWT\Validation\RequiredConstraintsViolated;
+use Lcobucci\JWT\Validation\Validator;
 use STS\JWT\Exceptions\JwtExpiredException;
 use STS\JWT\Exceptions\JwtValidationException;
-use Lcobucci\JWT\Parser;
-use Lcobucci\JWT\Token;
-use Lcobucci\JWT\ValidationData;
+use Lcobucci\JWT\Token\Parser;
 use STS\JWT\Facades\JWT;
 
-/**
- *
- */
 class ParsedToken
 {
     protected bool $isValid = false;
 
-    public function __construct(protected Token $token)
-    {}
+    public function __construct(protected Plain $token)
+    {
+    }
 
     public static function fromString($jwt): ParsedToken
     {
         return new static(
-            (new Parser())->parse($jwt)
+            (new Parser(new JoseEncoder()))->parse($jwt)
         );
     }
 
-    /**
-     * Validates the token and throws exceptions for any failure encountered
-     *
-     * @param ValidationData|string $validationInput
-     * @param null $signingKey
-     *
-     * @return ParsedToken
-     * @throws JwtExpiredException
-     * @throws JwtValidationException
-     */
-    public function validate($validationInput, $signingKey = null): ParsedToken
+    public function validateAll(string $id, $signingKey = null): self
     {
-        $this->validateRequiredClaims();
-        $this->validateExpiration();
-        $this->validateData($this->buildValidationData($validationInput));
-        $this->verifySignature($signingKey);
+        (new Validator)->assert($this->token, ...$this->validationRules($id, $signingKey));
 
         $this->isValid = true;
 
@@ -54,15 +47,11 @@ class ParsedToken
 
     /**
      * Performs validation and returns a boolean. Suppresses any exceptions thrown from validation.
-     *
-     * @param $validationInput
-     * @param null $signingKey
-     * @return bool
      */
-    public function isValid($validationInput, $signingKey = null): bool
+    public function isValid(string $id, $signingKey = null): bool
     {
         try {
-            $this->validate($validationInput, $signingKey);
+            $this->validateAll($id, $signingKey);
         } catch (Exception $e) {
             return false;
         }
@@ -71,99 +60,42 @@ class ParsedToken
     }
 
     /**
-     * @throws JwtValidationException
+     * Validates and throws a single, specific exception rather than the combined RequiredConstraintsViolated
      */
-    protected function validateRequiredClaims(): void
+    public function validate(string $id, $signingKey = null): self
     {
-        if (!$this->token->hasClaim('exp')) {
-            throw new JwtValidationException("Token expiration is missing", $this->token);
-        }
-
-        if (!$this->token->hasClaim('jti')) {
-            throw new JwtValidationException("Token ID is missing", $this->token);
-        }
-
-        if (Config::get('jwt.validate.audience') && !$this->token->hasClaim('aud')) {
-            throw new JwtValidationException("Token audience is missing", $this->token);
+        try {
+            return $this->validateAll($id, $signingKey);
+        } catch (RequiredConstraintsViolated $e) {
+            throw Arr::first($e->violations());
         }
     }
 
-    /**
-     * @throws JwtExpiredException
-     */
-    protected function validateExpiration(): void
+    protected function validationRules(string $id, $signingKey): array
     {
-        // Yes this will be validated in the `validateData` loop, however I like having a dedicated error message
-        // for this quite-common scenario
-        if ($this->token->isExpired()) {
-            throw new JwtExpiredException($this->token);
-        }
+        return array_filter([
+            // Check the signature first. If this isn't valid, nothing else matter.
+            new SignedWith(new Sha256(), InMemory::plainText($signingKey ?? JWT::signingKey())),
+
+            // Check that we're withing the allowed timeframe
+            new LooseValidAt(SystemClock::fromUTC()),
+
+            // Optionally check that the token was intended for us
+            config('jwt.validate.audience') ? new PermittedFor(JWT::defaultAudience()) : null,
+
+            // And finally that it has the correct ID
+            new IdentifiedBy($id)
+        ]);
     }
 
-    /**
-     * @param ValidationData $validationData
-     *
-     * @throws JwtValidationException
-     */
-    protected function validateData(ValidationData $validationData): void
+    public function isExpired(): bool
     {
-        foreach ($this->getValidatableClaims() as $claim) {
-            if (!$claim->validate($validationData)) {
-                throw new JwtValidationException("JWT claim [{$claim->getName()}] is invalid", $this->token);
-            }
-        }
-    }
-
-    /**
-     * @param null $signingKey
-     *
-     * @throws JwtValidationException
-     */
-    protected function verifySignature($signingKey = null): void
-    {
-        if (!$this->token->verify(new Sha256(), $signingKey ?? JWT::getSigningKey())) {
-            throw new JwtValidationException("JWT signature is invalid", $this->token);
-        }
-    }
-
-    /**
-     * @return \Generator
-     */
-    protected function getValidatableClaims(): \Generator
-    {
-        foreach ($this->token->getClaims() as $claim) {
-            if ($claim instanceof Validatable) {
-                yield $claim;
-            }
-        }
-    }
-
-    /**
-     * @param ValidationData|string $validationInput
-     *
-     * @return ValidationData
-     */
-    protected function buildValidationData($validationInput): ValidationData
-    {
-        if (is_string($validationInput)) {
-            $validationData = new ValidationData();
-            $validationData->setId($validationInput);
-        } else if ($validationInput instanceof ValidationData) {
-            $validationData = $validationInput;
-        } else {
-            throw new \InvalidArgumentException("Invalid validation data provided");
-        }
-
-        if (!$validationData->has('aud')) {
-            $validationData->setAudience(JWT::getDefaultAudience());
-        }
-
-        return $validationData;
+        return $this->token->isExpired(new DateTimeImmutable);
     }
 
     public function toArray(): array
     {
-        return array_map(fn($claim) => (string) $claim, $this->token->getClaims());
+        return $this->token->claims()->all();
     }
 
     public function getPayload(): array
@@ -171,25 +103,11 @@ class ParsedToken
         return array_diff_key($this->toArray(), array_flip(['jti','iss','aud','sub','iat','nbf','exp']));
     }
 
-    /**
-     * @param $name
-     * @param null $default
-     *
-     * @return mixed|null
-     */
     public function get($name, $default = null)
     {
-        return $this->token->hasClaim($name)
-            ? $this->token->getClaim($name)
-            : $default;
+        return $this->token->claims()->get($name, $default);
     }
 
-    /**
-     * @param $method
-     * @param $parameters
-     *
-     * @return mixed
-     */
     public function __call($method, $parameters)
     {
         return call_user_func_array([$this->token, $method], $parameters);
