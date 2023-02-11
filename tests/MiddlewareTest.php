@@ -10,14 +10,14 @@ class MiddlewareTest extends \Orchestra\Testbench\TestCase
     protected function getPackageAliases($app)
     {
         return [
-            'JWT' => \STS\JWT\JWTFacade::class
+            'JWT' => \STS\JWT\Facades\JWT::class
         ];
     }
 
     protected function getEnvironmentSetUp($app)
     {
         $app['config']->set([
-            'jwt.key'      => 'thisissigningkey',
+            'jwt.key'      => 'thisissigningkeythisissigningkey',
             'jwt.audience' => 'myappaud',
             'jwt.issuer'   => 'myappiss'
         ]);

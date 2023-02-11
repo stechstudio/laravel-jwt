@@ -11,6 +11,7 @@ use STS\JWT\Exceptions\JwtValidationException;
 use Lcobucci\JWT\Parser;
 use Lcobucci\JWT\Token;
 use Lcobucci\JWT\ValidationData;
+use STS\JWT\Facades\JWT;
 
 /**
  *
@@ -120,7 +121,7 @@ class ParsedToken
      */
     protected function verifySignature($signingKey = null): void
     {
-        if (!$this->token->verify(new Sha256(), $signingKey ?? JWTFacade::getSigningKey())) {
+        if (!$this->token->verify(new Sha256(), $signingKey ?? JWT::getSigningKey())) {
             throw new JwtValidationException("JWT signature is invalid", $this->token);
         }
     }
@@ -154,7 +155,7 @@ class ParsedToken
         }
 
         if (!$validationData->has('aud')) {
-            $validationData->setAudience(JWTFacade::getDefaultAudience());
+            $validationData->setAudience(JWT::getDefaultAudience());
         }
 
         return $validationData;

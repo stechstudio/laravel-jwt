@@ -1,6 +1,13 @@
 <?php
 
+use Carbon\Carbon;
+use Carbon\CarbonImmutable;
+use Lcobucci\JWT\Encoding\JoseEncoder;
 use Lcobucci\JWT\Signer\Hmac\Sha256;
+use Lcobucci\JWT\Signer\Key\InMemory;
+use Lcobucci\JWT\Token\Parser;
+use Lcobucci\JWT\Validation\Constraint\SignedWith;
+use Lcobucci\JWT\Validation\Validator;
 
 class ClientTest extends \Orchestra\Testbench\TestCase
 {
@@ -12,29 +19,30 @@ class ClientTest extends \Orchestra\Testbench\TestCase
     protected function getPackageAliases($app)
     {
         return [
-            'JWT' => \STS\JWT\JWTFacade::class
+            'JWT' => \STS\JWT\Facades\JWT::class
         ];
     }
 
     protected function getEnvironmentSetUp($app)
     {
-        $app['config']->set([
-            'jwt.key' => 'thisissigningkey',
-            'jwt.audience' => 'myappaud',
-            'jwt.issuer' => 'myappiss'
-        ]);
+        $app['config']->set(['jwt' => [
+            'key' => 'thisissigningkeythisissigningkey',
+            'audience' => 'myappaud',
+            'issuer' => 'myappiss',
+            'lifetime' => 900,
+        ]]);
     }
 
     public function testSigningKeyInjected()
     {
-        $this->assertEquals('thisissigningkey', JWT::getSigningKey());
+        $this->assertEquals('thisissigningkeythisissigningkey', JWT::signingKey());
     }
 
     public function testBase64SigningKey()
     {
-        config(['jwt.key' => 'base64:' . base64_encode('thisissigningkey')]);
+        config(['jwt.key' => 'base64:' . base64_encode('thisissigningkeythisissigningkey')]);
 
-        $this->assertEquals('thisissigningkey', JWT::getSigningKey());
+        $this->assertEquals('thisissigningkeythisissigningkey', JWT::signingKey());
     }
 
     public function testTokenAlwaysSigned()
@@ -43,54 +51,56 @@ class ClientTest extends \Orchestra\Testbench\TestCase
         $token = JWT::getToken();
 
         $this->assertTrue(
-            $token->verify(new Lcobucci\JWT\Signer\Hmac\Sha256(), "thisissigningkey")
+            (new Validator())->validate(
+                $token,
+                new SignedWith(new Sha256(), InMemory::plainText("thisissigningkeythisissigningkey"))
+            )
         );
     }
 
     public function testAudience()
     {
         // Default audience
-        $this->assertEquals('myappaud', JWT::getToken()->getClaim('aud'));
+        $this->assertTrue(JWT::getToken()->isPermittedFor('myappaud'));
 
         // Explicitly set
-        $this->assertEquals('test-aud', JWT::setAudience('test-aud')->getToken()->getClaim('aud'));
+        $this->assertTrue(JWT::permittedFor('test-aud')->getToken()->isPermittedFor('test-aud'));
     }
 
     public function testIssuer()
     {
         // Default issuer
-        $this->assertEquals('myappiss', JWT::getToken()->getClaim('iss'));
+        $this->assertTrue(JWT::getToken()->hasBeenIssuedBy('myappiss'));
 
         // Explicitly set
-        $this->assertEquals('test-iss', JWT::setIssuer('test-iss')->getToken()->getClaim('iss'));
+        $this->assertTrue(JWT::issuedBy('test-iss')->getToken()->hasBeenIssuedBy('test-iss'));
     }
 
     public function testId()
     {
-        $this->assertEquals('test-id', JWT::setId('test-id')->getToken()->getClaim('jti'));
+        $this->assertTrue(JWT::identifiedBy('test-id')->getToken()->isIdentifiedBy('test-id'));
     }
 
     public function testPayload()
     {
         /** @var \Lcobucci\JWT\Token $token */
-        $token = JWT::setId('test-id')->setClaims(['foo' => 'bar'])->getToken();
+        $token = JWT::identifiedBy('test-id')->withClaims(['foo' => 'bar'])->getToken();
 
-        $this->assertEquals('bar', $token->getClaim('foo'));
+        $this->assertEquals('bar', $token->claims()->get('foo'));
     }
 
     public function testLifetime()
     {
+        $token = JWT::duration(600)->getToken();
+
+        $this->assertFalse($token->isExpired(CarbonImmutable::now()->addMinutes(9)));
+        $this->assertTrue($token->isExpired(CarbonImmutable::now()->addMinutes(10)));
+
         /** @var \Lcobucci\JWT\Token $token */
-        $token = JWT::setLifetime(600)->getToken();
+        $token = JWT::duration(CarbonImmutable::now()->addMinutes(5))->getToken();
 
-        $this->assertFalse($token->isExpired(\Carbon\Carbon::now()->addMinutes(9)));
-        $this->assertTrue($token->isExpired(\Carbon\Carbon::now()->addMinutes(10)));
-
-        /** @var \Lcobucci\JWT\Token $token */
-        $token = JWT::setLifetime(\Carbon\Carbon::now()->addMinutes(5))->getToken();
-
-        $this->assertFalse($token->isExpired(\Carbon\Carbon::now()->addMinutes(4)));
-        $this->assertTrue($token->isExpired(\Carbon\Carbon::now()->addMinutes(5)));
+        $this->assertFalse($token->isExpired(CarbonImmutable::now()->addMinutes(4)));
+        $this->assertTrue($token->isExpired(CarbonImmutable::now()->addMinutes(5)));
     }
 
     public function testQuickGet()
@@ -99,14 +109,19 @@ class ClientTest extends \Orchestra\Testbench\TestCase
 
         $this->assertTrue(is_string($jwt));
 
-        $token = (new \Lcobucci\JWT\Parser())->parse($jwt);
+        $token = (new Parser(new JoseEncoder()))->parse($jwt);
 
         $this->assertTrue($token instanceof \Lcobucci\JWT\Token);
 
-        $this->assertEquals('test-id', $token->getClaim('jti'));
-        $this->assertEquals('bar', $token->getClaim('foo'));
-        $this->assertFalse($token->isExpired(\Carbon\Carbon::now()->addMinutes(29)));
-        $this->assertTrue($token->isExpired(\Carbon\Carbon::now()->addMinutes(30)));
-        $this->assertTrue($token->verify(new Lcobucci\JWT\Signer\Hmac\Sha256(), "thisissigningkey"));
+        $this->assertTrue($token->isIdentifiedBy('test-id'));
+        $this->assertEquals('bar', $token->claims()->get('foo'));
+        $this->assertFalse($token->isExpired(Carbon::now()->addMinutes(29)));
+        $this->assertTrue($token->isExpired(Carbon::now()->addMinutes(30)));
+        $this->assertTrue(
+            (new Validator())->validate(
+                $token,
+                new SignedWith(new Sha256(), InMemory::plainText("thisissigningkeythisissigningkey"))
+            )
+        );
     }
 }

@@ -10,6 +10,10 @@ class JWTServiceProvider extends ServiceProvider
 {
     public function boot()
     {
+        $this->publishes([
+            __DIR__.'/../config/jwt.php' => config_path('jwt.php'),
+        ]);
+
         $this->app['router']->aliasMiddleware('jwt', JwtValidateMiddleware::class);
 
         Request::macro('setToken', function(ParsedToken $token) {
@@ -25,8 +29,7 @@ class JWTServiceProvider extends ServiceProvider
 
     public function register()
     {
-        // Automatically apply the package configuration
-        $this->mergeConfigFrom(__DIR__.'/../config/config.php', 'jwt');
+        $this->mergeConfigFrom(__DIR__.'/../config/jwt.php', 'jwt');
 
         $this->app->bind(Client::class, function ($app) {
             if (Str::startsWith($key = config('jwt.key'), 'base64:')) {

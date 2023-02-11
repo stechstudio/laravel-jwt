@@ -1,10 +1,11 @@
 <?php
 
-namespace STS\JWT;
+namespace STS\JWT\Facades;
 
 use Illuminate\Support\Facades\Facade;
+use STS\JWT\Client;
 
-class JWTFacade extends Facade
+class JWT extends Facade
 {
     /**
      * Get the registered name of the component.

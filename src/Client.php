@@ -3,187 +3,110 @@
 namespace STS\JWT;
 
 use Carbon\Carbon;
+use Carbon\CarbonImmutable;
+use DateTimeImmutable;
+use Lcobucci\JWT\Encoding\ChainedFormatter;
+use Lcobucci\JWT\Encoding\JoseEncoder;
 use Lcobucci\JWT\Signer;
 use Lcobucci\JWT\Signer\Hmac\Sha256;
 use Lcobucci\JWT\Builder as BaseBuilder;
+use Lcobucci\JWT\Signer\Key\InMemory;
+use Lcobucci\JWT\Token\Builder;
+use Lcobucci\JWT\Token\Plain;
 
 /**
  *
  */
 class Client
 {
-    /** @var BaseBuilder */
-    protected $builder;
+    protected Builder $builder;
+    protected string $signingKey;
+    protected bool $isSigned = false;
+    protected array $configures = [];
 
-    /** @var int */
-    protected $lifetime;
-
-    /** @var bool */
-    protected $isSigned = false;
-
-    /** @var string */
-    protected $defaultSigningKey;
-
-    /** @var string */
-    protected $signingKey;
-
-    /** @var null */
-    protected $issuedAt;
-
-    /** @var string */
-    protected $issuer;
-
-    /** @var string */
-    protected $audience;
-
-    /** @var array */
-    protected $claims = [];
-
-    /**
-     * @param string $signingKey
-     * @param int|Carbon $lifetime
-     * @param $issuer
-     * @param $audience
-     */
-    public function __construct($signingKey, $lifetime, $issuer, $audience)
+    public function __construct(
+        protected string $defaultSigningKey,
+        protected int|CarbonImmutable $lifetime,
+        protected string $issuer,
+        protected string $audience)
     {
-        $this->lifetime = $lifetime;
-        $this->defaultSigningKey = $signingKey;
-        $this->signingKey = $signingKey;
-
         $this->reset();
-        $this->issuer = $issuer;
-        $this->audience = $audience;
     }
 
-    /**
-     * @return $this
-     */
-    public function reset()
+    public function reset(): self
     {
-        $this->builder = new BaseBuilder();
-        $this->setLifetime($this->lifetime);
-        $this->claims = [];
+        $this->builder = new Builder(new JoseEncoder(), ChainedFormatter::default());
+        $this->duration($this->lifetime);
+        $this->configures = [];
         $this->signingKey = $this->defaultSigningKey;
         $this->isSigned = false;
 
         return $this;
     }
 
-    /**
-     * @return string
-     */
-    public function getDefaultAudience()
+    public function defaultAudience(): string
     {
         return $this->audience;
     }
 
-    /**
-     * @return string
-     */
-    public function getDefaultIssuer()
+    public function defaultIssuer(): string
     {
         return $this->issuer;
     }
 
-    /**
-     * @param $signingKey
-     *
-     * @return $this
-     */
-    public function setSigningKey($signingKey)
+    public function signWith(string $signingKey): self
     {
         $this->signingKey = $signingKey;
 
         return $this;
     }
 
-    /**
-     * @return string
-     */
-    public function getSigningKey()
+    public function signingKey(): string
     {
         return $this->signingKey;
     }
 
-    /**
-     * @param Signer $signer
-     * @param string $key
-     *
-     * @return $this
-     */
-    public function sign(Signer $signer, $key)
-    {
-        $this->isSigned = true;
-
-        $this->builder->sign($signer, $key);
-
-        return $this;
-    }
-
-    /**
-     * We want to enforce a couple things before token is generated
-     */
-    public function getToken()
+    public function getToken(): Plain
     {
         // Ensure we have an audience set
-        if (!in_array('aud', $this->claims)) {
-            $this->builder->setAudience($this->audience);
+        if (!in_array('permittedFor', $this->configures)) {
+            $this->builder->permittedFor($this->audience);
         }
 
         // Ensure we have an issuer set
-        if (!in_array('iss', $this->claims)) {
-            $this->builder->setIssuer($this->issuer);
+        if (!in_array('issuedBy', $this->configures)) {
+            $this->builder->issuedBy($this->issuer);
         }
 
-        // We always sign. Always.
-        if (!$this->isSigned) {
-            $this->sign(new Sha256(), $this->getSigningKey());
-        }
-
-        $token = $this->builder->getToken();
+        $token = $this->builder->getToken(new Sha256(), InMemory::plainText($this->signingKey()));
 
         $this->reset();
 
         return $token;
     }
 
-    /**
-     * @return string
-     */
-    public function __toString()
+    public function __toString(): string
     {
         return (string) $this->getToken();
     }
 
-    /**
-     * @param int|Carbon $lifetime
-     *
-     * @return $this
-     */
-    public function setLifetime($lifetime)
+    public function duration(int|CarbonImmutable $lifetime = null): self
     {
         if (is_int($lifetime)) {
-            $this->builder->setExpiration(time() + $lifetime);
+            $this->builder->expiresAt(CarbonImmutable::now()->addSeconds($lifetime));
         }
 
-        if ($lifetime instanceof Carbon) {
-            $this->builder->setExpiration($lifetime->timestamp);
+        if ($lifetime instanceof CarbonImmutable) {
+            $this->builder->expiresAt($lifetime);
         }
 
         return $this;
     }
 
-    /**
-     * @param array $claims
-     *
-     * @return $this
-     */
-    public function setClaims(array $claims = [])
+    public function withClaims(array $claims = []): self
     {
         foreach ($claims AS $key => $value) {
-            $this->claims[] = $key;
-            $this->builder->set($key, $value);
+            $this->builder->withClaim($key, $value);
         }
 
         return $this;
@@ -199,56 +122,43 @@ class Client
      *
      * @return string
      */
-    public function get($id, array $claims = [], $lifetime = null, $signingKey = null)
+    public function get(string$id, array $claims = [], $lifetime = null, $signingKey = null)
     {
-        if ($signingKey != null) {
-            $this->setSigningKey($signingKey);
+        if ($signingKey !== null) {
+            $this->signWith($signingKey);
         }
 
-        return (string)$this
-            ->setLifetime($lifetime)
-            ->setClaims($claims)
-            ->setId($id)
-            ->getToken();
+        return $this
+            ->duration($lifetime)
+            ->withClaims($claims)
+            ->identifiedBy($id)
+            ->getToken()
+            ->toString();
     }
 
-    /**
-     * @param $audience
-     *
-     * @return $this
-     */
-    public function setAudience($audience)
+    public function setAudience(string $audience): self
     {
-        $this->builder->setAudience($audience);
+        $this->builder->permittedFor($audience);
         $this->claims[] = "aud";
 
         return $this;
     }
 
-    /**
-     * @param $issuer
-     *
-     * @return $this
-     */
-    public function setIssuer($issuer)
+    public function setIssuer(string $issuer)
     {
-        $this->builder->setIssuer($issuer);
+        $this->builder->issuedBy($issuer);
         $this->claims[] = "iss";
 
         return $this;
     }
 
-    /**
-     * @param $method
-     * @param $parameters
-     *
-     * @return mixed
-     */
-    public function __call($method, $parameters)
+    public function __call(string $method, array $parameters): mixed
     {
+        $this->configures[] = $method;
+
         $result = call_user_func_array([$this->builder, $method], $parameters);
 
-        return $result instanceof BaseBuilder
+        return $result instanceof Builder
             ? $this
             : $result;
     }

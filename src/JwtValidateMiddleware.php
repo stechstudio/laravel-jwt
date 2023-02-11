@@ -8,15 +8,6 @@ use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
 
 class JwtValidateMiddleware
 {
-    /**
-     * @param Request $request
-     * @param Closure $next
-     * @param null $id
-     *
-     * @return mixed
-     * @throws Exceptions\JwtExpiredException
-     * @throws Exceptions\JwtValidationException
-     */
     public function handle(Request $request, Closure $next, $id = null)
     {
         if ($id === null) {

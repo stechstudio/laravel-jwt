@@ -10,7 +10,7 @@ class ValidationTest extends \Orchestra\Testbench\TestCase
     protected function getPackageAliases($app)
     {
         return [
-            'JWT' => \STS\JWT\JWTFacade::class
+            'JWT' => \STS\JWT\Facades\JWT::class
         ];
     }
 
