@@ -8,7 +8,7 @@ use Illuminate\Support\Str;
 
 class JWTServiceProvider extends ServiceProvider
 {
-    public function boot()
+    public function boot(): void
     {
         $this->publishes([
             __DIR__.'/../config/jwt.php' => config_path('jwt.php'),
@@ -17,17 +17,17 @@ class JWTServiceProvider extends ServiceProvider
         $this->app['router']->aliasMiddleware('jwt', JwtValidateMiddleware::class);
 
         Request::macro('setToken', function(ParsedToken $token) {
-            $this->token = $token;
+            $this->attributes->set('token', $token);
         });
 
         Request::macro('getClaim', function($name, $default = null) {
-            return $this->token && $this->token instanceof ParsedToken
-                ? $this->token->get($name, $default)
+            return $this->attributes->has('token') && $this->attributes->get('token') instanceof ParsedToken
+                ? $this->attributes->get('token')->get($name, $default)
                 : $default;
         });
     }
 
-    public function register()
+    public function register(): void
     {
         $this->mergeConfigFrom(__DIR__.'/../config/jwt.php', 'jwt');
 
@@ -45,7 +45,7 @@ class JWTServiceProvider extends ServiceProvider
         });
     }
 
-    public function provides()
+    public function provides(): array
     {
         return [Client::class];
     }
