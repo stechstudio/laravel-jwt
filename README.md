@@ -13,6 +13,10 @@ This package wraps the excellent [lcobucci/jwt](https://github.com/lcobucci/jwt)
 4) HTTP Middleware to validate a route-specific JWT
 5) Request macro to easily access route-specific JWT claims
 
+## Upgrading from version 1
+
+There are a few breaking changing in version 2, please 
+
 ## Quickstart
 
 ### Installation
@@ -79,12 +83,12 @@ The default token issuer (`iss` claim) is your `APP_NAME` lowercase. You can spe
  
 For more control over your token you can create it fluently instead. 
  
-You can use any of the methods provided by the [underlying `Builder` class](https://lcobucci-jwt.readthedocs.io/en/latest/issuing-tokens/), along with a few new ones like `signWith`.
+You can use any of the methods provided by the [underlying `Builder` class](https://lcobucci-jwt.readthedocs.io/en/latest/issuing-tokens/), along with a few new ones like `signWith` and `lifetime`.
  
  ```php
  $token = JWT::setId('my-token-id')
+    ->lifetime(3600)
     ->signWith('custom-signing-key')
-    ->duration(3600)
     ->issuedBy("my-app")
     ->permittedFor("receiving-app")
     ->withClaim('myclaim', 'any value')

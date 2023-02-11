@@ -93,7 +93,7 @@ class ClientTest extends \Orchestra\Testbench\TestCase
 
     public function testMutableDatetimeConversion()
     {
-        $token = JWT::duration(Carbon::now()->addMinutes(10))->getToken();
+        $token = JWT::expiresAt(Carbon::now()->addMinutes(10))->getToken();
 
         $this->assertFalse($token->isExpired(CarbonImmutable::now()->addMinutes(9)));
         $this->assertTrue($token->isExpired(CarbonImmutable::now()->addMinutes(10)));
@@ -101,13 +101,13 @@ class ClientTest extends \Orchestra\Testbench\TestCase
 
     public function testLifetime()
     {
-        $token = JWT::duration(600)->getToken();
+        $token = JWT::lifetime(600)->getToken();
 
         $this->assertFalse($token->isExpired(CarbonImmutable::now()->addMinutes(9)));
         $this->assertTrue($token->isExpired(CarbonImmutable::now()->addMinutes(10)));
 
         /** @var Token $token */
-        $token = JWT::duration(CarbonImmutable::now()->addMinutes(5))->getToken();
+        $token = JWT::expiresAt(CarbonImmutable::now()->addMinutes(5))->getToken();
 
         $this->assertFalse($token->isExpired(CarbonImmutable::now()->addMinutes(4)));
         $this->assertTrue($token->isExpired(CarbonImmutable::now()->addMinutes(5)));

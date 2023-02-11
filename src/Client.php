@@ -35,7 +35,7 @@ class Client
     public function reset(): self
     {
         $this->builder = new Builder(new JoseEncoder(), ChainedFormatter::default());
-        $this->duration($this->lifetime);
+        $this->lifetime($this->lifetime);
         $this->configures = [];
         $this->signingKey = $this->defaultSigningKey;
         $this->isSigned = false;
@@ -89,19 +89,20 @@ class Client
         return (string) $this->getToken();
     }
 
-    public function duration(int|DateTime|DateTimeImmutable $lifetime = null): self
+    public function expiresAt(DateTime|DateTimeImmutable $expiration): self
     {
-        if (is_int($lifetime)) {
-            $this->builder->expiresAt(CarbonImmutable::now()->addSeconds($lifetime));
+        if($expiration instanceof DateTime) {
+            $expiration = DateTimeImmutable::createFromMutable($expiration);
         }
 
-        if($lifetime instanceof DateTime) {
-            $lifetime = DateTimeImmutable::createFromMutable($lifetime);
-        }
+        $this->builder->expiresAt($expiration);
 
-        if ($lifetime instanceof DateTimeImmutable) {
-            $this->builder->expiresAt($lifetime);
-        }
+        return $this;
+    }
+
+    public function lifetime(int $lifetime): self
+    {
+        $this->builder->expiresAt(CarbonImmutable::now()->addSeconds($lifetime));
 
         return $this;
     }
@@ -132,7 +133,7 @@ class Client
         }
 
         return $this
-            ->duration($lifetime)
+            ->lifetime($lifetime ?? $this->lifetime)
             ->withClaims($claims)
             ->identifiedBy($id)
             ->getToken()
