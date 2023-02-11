@@ -91,6 +91,14 @@ class ClientTest extends \Orchestra\Testbench\TestCase
         $this->assertEquals('bar', $token->claims()->get('foo'));
     }
 
+    public function testMutableDatetimeConversion()
+    {
+        $token = JWT::duration(Carbon::now()->addMinutes(10))->getToken();
+
+        $this->assertFalse($token->isExpired(CarbonImmutable::now()->addMinutes(9)));
+        $this->assertTrue($token->isExpired(CarbonImmutable::now()->addMinutes(10)));
+    }
+
     public function testLifetime()
     {
         $token = JWT::duration(600)->getToken();

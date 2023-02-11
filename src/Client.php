@@ -4,6 +4,8 @@ namespace STS\JWT;
 
 use Carbon\Carbon;
 use Carbon\CarbonImmutable;
+use DateTime;
+use DateTimeImmutable;
 use Lcobucci\JWT\Encoding\ChainedFormatter;
 use Lcobucci\JWT\Encoding\JoseEncoder;
 use Lcobucci\JWT\Signer\Hmac\Sha256;
@@ -87,13 +89,17 @@ class Client
         return (string) $this->getToken();
     }
 
-    public function duration(int|CarbonImmutable $lifetime = null): self
+    public function duration(int|DateTime|DateTimeImmutable $lifetime = null): self
     {
         if (is_int($lifetime)) {
             $this->builder->expiresAt(CarbonImmutable::now()->addSeconds($lifetime));
         }
 
-        if ($lifetime instanceof CarbonImmutable) {
+        if($lifetime instanceof DateTime) {
+            $lifetime = DateTimeImmutable::createFromMutable($lifetime);
+        }
+
+        if ($lifetime instanceof DateTimeImmutable) {
             $this->builder->expiresAt($lifetime);
         }
 
