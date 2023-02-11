@@ -1,23 +1,24 @@
 <?php
 
 use Lcobucci\JWT\Validation\ConstraintViolation;
-use Lcobucci\JWT\Validation\RequiredConstraintsViolated;
+use Orchestra\Testbench\TestCase;
+use STS\JWT\Facades\JWT;
 
-class MiddlewareTest extends \Orchestra\Testbench\TestCase
+class MiddlewareTest extends TestCase
 {
-    protected function getPackageProviders($app)
+    protected function getPackageProviders($app): array
     {
         return [\STS\JWT\JWTServiceProvider::class];
     }
 
-    protected function getPackageAliases($app)
+    protected function getPackageAliases($app): array
     {
         return [
             'JWT' => \STS\JWT\Facades\JWT::class
         ];
     }
 
-    protected function getEnvironmentSetUp($app)
+    protected function getEnvironmentSetUp($app): void
     {
         $app['config']->set([
             'jwt.key'      => 'thisissigningkeythisissigningkey',

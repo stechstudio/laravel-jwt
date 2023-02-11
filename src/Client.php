@@ -4,18 +4,15 @@ namespace STS\JWT;
 
 use Carbon\Carbon;
 use Carbon\CarbonImmutable;
-use DateTimeImmutable;
 use Lcobucci\JWT\Encoding\ChainedFormatter;
 use Lcobucci\JWT\Encoding\JoseEncoder;
-use Lcobucci\JWT\Signer;
 use Lcobucci\JWT\Signer\Hmac\Sha256;
-use Lcobucci\JWT\Builder as BaseBuilder;
 use Lcobucci\JWT\Signer\Key\InMemory;
 use Lcobucci\JWT\Token\Builder;
 use Lcobucci\JWT\Token\Plain;
 
 /**
- *
+ * @mixin Builder
  */
 class Client
 {

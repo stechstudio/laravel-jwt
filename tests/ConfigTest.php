@@ -2,12 +2,12 @@
 
 class ConfigTest extends \Orchestra\Testbench\TestCase
 {
-    protected function getPackageProviders($app)
+    protected function getPackageProviders($app): array
     {
         return [\STS\JWT\JWTServiceProvider::class];
     }
 
-    protected function getPackageAliases($app)
+    protected function getPackageAliases($app): array
     {
         return [
             'JWT' => \STS\JWT\Facades\JWT::class

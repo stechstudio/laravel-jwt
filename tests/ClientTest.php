@@ -5,25 +5,27 @@ use Carbon\CarbonImmutable;
 use Lcobucci\JWT\Encoding\JoseEncoder;
 use Lcobucci\JWT\Signer\Hmac\Sha256;
 use Lcobucci\JWT\Signer\Key\InMemory;
+use Lcobucci\JWT\Token;
 use Lcobucci\JWT\Token\Parser;
 use Lcobucci\JWT\Validation\Constraint\SignedWith;
 use Lcobucci\JWT\Validation\Validator;
+use STS\JWT\Facades\JWT;
 
 class ClientTest extends \Orchestra\Testbench\TestCase
 {
-    protected function getPackageProviders($app)
+    protected function getPackageProviders($app): array
     {
         return [\STS\JWT\JWTServiceProvider::class];
     }
 
-    protected function getPackageAliases($app)
+    protected function getPackageAliases($app): array
     {
         return [
             'JWT' => \STS\JWT\Facades\JWT::class
         ];
     }
 
-    protected function getEnvironmentSetUp($app)
+    protected function getEnvironmentSetUp($app): void
     {
         $app['config']->set(['jwt' => [
             'key' => 'thisissigningkeythisissigningkey',
@@ -47,7 +49,7 @@ class ClientTest extends \Orchestra\Testbench\TestCase
 
     public function testTokenAlwaysSigned()
     {
-        /** @var \Lcobucci\JWT\Token $token */
+        /** @var Token $token */
         $token = JWT::getToken();
 
         $this->assertTrue(
@@ -83,7 +85,7 @@ class ClientTest extends \Orchestra\Testbench\TestCase
 
     public function testPayload()
     {
-        /** @var \Lcobucci\JWT\Token $token */
+        /** @var Token $token */
         $token = JWT::identifiedBy('test-id')->withClaims(['foo' => 'bar'])->getToken();
 
         $this->assertEquals('bar', $token->claims()->get('foo'));
@@ -96,7 +98,7 @@ class ClientTest extends \Orchestra\Testbench\TestCase
         $this->assertFalse($token->isExpired(CarbonImmutable::now()->addMinutes(9)));
         $this->assertTrue($token->isExpired(CarbonImmutable::now()->addMinutes(10)));
 
-        /** @var \Lcobucci\JWT\Token $token */
+        /** @var Token $token */
         $token = JWT::duration(CarbonImmutable::now()->addMinutes(5))->getToken();
 
         $this->assertFalse($token->isExpired(CarbonImmutable::now()->addMinutes(4)));
@@ -107,11 +109,9 @@ class ClientTest extends \Orchestra\Testbench\TestCase
     {
         $jwt = JWT::get('test-id', ['foo' => 'bar'], 1800);
 
-        $this->assertTrue(is_string($jwt));
+        $this->assertIsString($jwt);
 
         $token = (new Parser(new JoseEncoder()))->parse($jwt);
-
-        $this->assertTrue($token instanceof \Lcobucci\JWT\Token);
 
         $this->assertTrue($token->isIdentifiedBy('test-id'));
         $this->assertEquals('bar', $token->claims()->get('foo'));
