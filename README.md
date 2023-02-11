@@ -9,11 +9,10 @@ Work with JWTs in your Laravel app? You may find this helpful.
 This package wraps the excellent [lcobucci/jwt](https://github.com/lcobucci/jwt) library with the following benefits:
 
 1) `JWT` facade with helper methods to quickly generate and parse tokens.
-2) Enforces a minimal set of claims for generated tokens, like `aud`, `iss`, and `exp`. 
-3) Always signs tokens, always.
-4) Validate parsed tokens to ensure our required claims are set properly with signature present and valid.
-5) HTTP Middleware to validate a route-specific JWT
-6) Request macro to easily access route-specific JWT claims
+2) Enforces a minimal set of claims for generated tokens, like `aud`, `iss`, and `exp`.
+3) Validate parsed tokens to ensure our required claims are set properly with signature present and valid.
+4) HTTP Middleware to validate a route-specific JWT
+5) Request macro to easily access route-specific JWT claims
 
 ## Quickstart
 
@@ -28,7 +27,7 @@ composer require stechstudio/laravel-jwt
 You can generate a simple JWT like this:
 
 ```php
-$jwt = JWT::get('token-id', ['anything' => 'here']);
+$jwt = JWT::get('token-id', ['myclaim' => 'somevalue']);
 ```
 
 This will generate a token with the ID provided and an array of claims, returning the string token.
@@ -79,19 +78,19 @@ The default token issuer (`iss` claim) is your `APP_NAME` lowercase. You can spe
  
  So far we've looked at the `JWT::get()` helper method which is super quick for simple needs. 
  
- For more control over your token you can create it fluently instead. 
+For more control over your token you can create it fluently instead. 
+ 
+You can use any of the methods provided by the [underlying `Builder` class](https://lcobucci-jwt.readthedocs.io/en/latest/issuing-tokens/), along with a few new ones like `signWith`.
  
  ```php
  $token = JWT::setId('my-token-id')
-    ->setSigningKey('custom-signing-key')
-    ->setLifetime(3600)
-    ->setIssuer("my-app")
-    ->setAudience("receiving-app")
-    ->set('anything', 'here')
+    ->signWith('custom-signing-key')
+    ->duration(3600)
+    ->issuedBy("my-app")
+    ->permittedFor("receiving-app")
+    ->withClaim('myclaim', 'any value')
     ->getToken();
  ```
- 
- You can use any of the underlying methods from the [Builder](https://github.com/lcobucci/jwt/blob/3.2/README.md#user-content-creating).
  
  ## Parse received tokens
  
