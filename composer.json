@@ -1,12 +1,11 @@
 {
     "name": "stechstudio/laravel-jwt",
-    "description": "Simple helper package that makes it easy to generate and consume JWT tokens",
+    "description": "Helper package that makes it easy to generate, consume, and protect routes with JWT tokens in Laravel",
     "type": "library",
     "require": {
         "php": "^8.1|^8.2",
         "lcobucci/jwt": "^4.3",
-        "illuminate/support": "^8.0|^9.0|^10.0",
-        "spatie/laravel-package-tools": "^1.14"
+        "illuminate/support": "^8.0|^9.0|^10.0"
     },
     "require-dev": {
         "orchestra/testbench": "^7.0",
