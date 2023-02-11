@@ -93,6 +93,11 @@ class ParsedToken
         return $this->token->isExpired(new DateTimeImmutable);
     }
 
+    public function getClaims(): array
+    {
+        return $this->token->claims()->all();
+    }
+
     public function toArray(): array
     {
         return $this->token->claims()->all();
