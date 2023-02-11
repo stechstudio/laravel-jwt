@@ -2,9 +2,6 @@
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/stechstudio/laravel-jwt.svg?style=flat-square)](https://packagist.org/packages/stechstudio/laravel-jwt)
 [![Build Status](https://img.shields.io/travis/stechstudio/laravel-jwt/master.svg?style=flat-square)](https://travis-ci.org/stechstudio/laravel-jwt)
-[![Quality Score](https://img.shields.io/scrutinizer/g/stechstudio/laravel-jwt.svg?style=flat-square)](https://scrutinizer-ci.com/g/stechstudio/laravel-jwt)
-
-Work with JWTs in your Laravel app? You may find this helpful.
 
 This package wraps the excellent [lcobucci/jwt](https://github.com/lcobucci/jwt) library with the following benefits:
 
