@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use Carbon\CarbonImmutable;
 use DateTime;
 use DateTimeImmutable;
+use DateTimeInterface;
 use Lcobucci\JWT\Encoding\ChainedFormatter;
 use Lcobucci\JWT\Encoding\JoseEncoder;
 use Lcobucci\JWT\Signer\Hmac\Sha256;
@@ -116,24 +117,21 @@ class Client
         return $this;
     }
 
-    /**
-     * Helper function to quickly generate a simple string token
-     *
-     * @param string $id
-     * @param array $claims
-     * @param int|Carbon $lifetime
-     * @param string $signingKey
-     *
-     * @return string
-     */
-    public function get(string$id, array $claims = [], $lifetime = null, $signingKey = null)
+    public function get(string$id, array $claims = [], int|DateTimeInterface $lifetime = null, string $signingKey = null): string
     {
         if ($signingKey !== null) {
             $this->signWith($signingKey);
         }
 
+        if(is_int($lifetime)) {
+            $this->lifetime($lifetime);
+        }
+
+        if($lifetime instanceof DateTimeInterface) {
+            $this->expiresAt($lifetime);
+        }
+
         return $this
-            ->lifetime($lifetime ?? $this->lifetime)
             ->withClaims($claims)
             ->identifiedBy($id)
             ->getToken()
