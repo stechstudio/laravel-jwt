@@ -1,3 +1,6 @@
+![](https://user-images.githubusercontent.com/203749/218294314-302bd5bc-a991-4f4f-b6d0-152f3d0fb622.png)
+
+
 # Laravel JWT helper
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/stechstudio/laravel-jwt.svg?style=flat-square)](https://packagist.org/packages/stechstudio/laravel-jwt)
