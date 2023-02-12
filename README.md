@@ -1,7 +1,7 @@
-![](https://user-images.githubusercontent.com/203749/218294314-302bd5bc-a991-4f4f-b6d0-152f3d0fb622.png)
+![](https://user-images.githubusercontent.com/203749/218332026-c858a5c5-357a-4cbb-bbfd-a6397b24a4c3.png)
 
 
-# Laravel JWT helper
+# Laravel JWT Tools
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/stechstudio/laravel-jwt.svg?style=flat-square)](https://packagist.org/packages/stechstudio/laravel-jwt)
 [![Build Status](https://img.shields.io/travis/stechstudio/laravel-jwt/master.svg?style=flat-square)](https://travis-ci.org/stechstudio/laravel-jwt)
