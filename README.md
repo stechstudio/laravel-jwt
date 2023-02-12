@@ -1,7 +1,7 @@
 ![](https://user-images.githubusercontent.com/203749/218294314-302bd5bc-a991-4f4f-b6d0-152f3d0fb622.png)
 
 
-# Laravel JWT helper
+# Laravel JWT Tools
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/stechstudio/laravel-jwt.svg?style=flat-square)](https://packagist.org/packages/stechstudio/laravel-jwt)
 [![Build Status](https://img.shields.io/travis/stechstudio/laravel-jwt/master.svg?style=flat-square)](https://travis-ci.org/stechstudio/laravel-jwt)
@@ -16,10 +16,6 @@ This package wraps the excellent [lcobucci/jwt](https://github.com/lcobucci/jwt)
 4) HTTP Middleware to validate a route-specific JWT
 5) Request macro to easily access route-specific JWT claims
 
-## Upgrading from version 1
-
-There are a few breaking changing in version 2, please 
-
 ## Quickstart
 
 ### Installation
@@ -30,7 +26,7 @@ composer require stechstudio/laravel-jwt
 
 ### Simple example
 
-You can generate a simple JWT like this:
+You can generate a simple JWT with the `get` method. 
 
 ```php
 $jwt = JWT::get('token-id', ['myclaim' => 'somevalue']);
@@ -38,7 +34,7 @@ $jwt = JWT::get('token-id', ['myclaim' => 'somevalue']);
 
 This will generate a token with the ID provided and an array of claims, returning the string token.
 
-### Change lifetime
+### Lifetime
 
 The default token expiration is set to 10 minutes which you can configure, or you can specify a custom lifetime value as a third parameter when creating the token:
 
@@ -49,10 +45,10 @@ $jwt = JWT::get('token-id', ['anything' => 'here'], 3600);
 This token will expire in one hour. You can also specify the lifetime with Carbon:
 
 ```php
-$jwt = JWT::get('token-id', ['anything' => 'here'], Carbon\Carbon::now()->addMinutes(60));
+$jwt = JWT::get('token-id', ['anything' => 'here'], now()->addMinutes(60));
 ```
 
-### Change signing key
+### Signing key
 
 If you are generating a JWT that will be consumed by a different app (very common use case in our company) you can specify the signing key as the fourth parameter.
 
@@ -66,7 +62,7 @@ This package tries to pick sane defaults, while also allowing you to change conf
 
 **Signature key**
 
-Every token is signed, that's a strong opinion of this package. By default the `APP_KEY` in your .env file is used for the signing key, or you can provide a dedicated `JWT_SIGNING_KEY` instead.
+Every token is signed. The `JWT_SIGNING_KEY` value is used is available, otherwise `APP_KEY` will be used as the signing key.
 
 **Lifetime**
 
@@ -78,43 +74,44 @@ The default token issuer (`iss` claim) is your `APP_NAME` lowercase. You can spe
 
 **Audience**
 
- The default token audience (`aud` claim) is your `APP_NAME` lowercase. You can specify a different issuer name via `JWT_AUDIENCE`.
- 
- ## Building tokens fluently
- 
- So far we've looked at the `JWT::get()` helper method which is super quick for simple needs. 
- 
+The default token audience (`aud` claim) is your `APP_NAME` lowercase. You can specify a different issuer name via `JWT_AUDIENCE`.
+
+## Building tokens fluently
+
+So far we've looked at the `JWT::get()` helper method which is super quick for simple needs. 
+
 For more control over your token you can create it fluently instead. 
  
 You can use any of the methods provided by the [underlying `Builder` class](https://lcobucci-jwt.readthedocs.io/en/latest/issuing-tokens/), along with a few new ones like `signWith` and `lifetime`.
- 
- ```php
- $token = JWT::setId('my-token-id')
-    ->lifetime(3600)
-    ->signWith('custom-signing-key')
-    ->issuedBy("my-app")
-    ->permittedFor("receiving-app")
-    ->withClaim('myclaim', 'any value')
-    ->getToken();
- ```
- 
- ## Parse received tokens
- 
- You can parse a JWT string into a token:
- 
- ```php
- $token = JWT::parse("... JWT string ...");
- ```
- 
- An exception will be thrown if the JWT cannot be parsed.
- 
- ## Validate received tokens
- 
- Just as this package has opinions on what a generated token should include, we want to ensure those minimums are set appropriately on any received tokens.
- 
- After parsing a received token, simply call `isValid` or `validate`, depending on whether you want a boolean result or exceptions thrown. Make sure to pass in the expected token ID.
- 
- ```php
+
+```php
+$token = JWT::setId('my-token-id')
+   ->lifetime(3600)
+   ->signWith('custom-signing-key-with-256-bits')
+   ->issuedBy("my-app")
+   ->permittedFor("receiving-app")
+   ->withClaim('myclaim', 'any value')
+   ->getToken()
+   ->toString();
+```
+
+## Parsing
+
+You can parse a JWT string into a token:
+
+```php
+$token = JWT::parse("... JWT string ...");
+```
+
+An exception will be thrown if the JWT cannot be parsed.
+
+## Validate received tokens
+
+Just as this package has opinions on what a generated token should include, we want to ensure those minimums are set appropriately on any received tokens.
+
+After parsing a received token, simply call `isValid` or `validate`, depending on whether you want a boolean result or exceptions thrown. Make sure to pass in the expected token ID.
+
+```php
 $token = JWT::parse("... JWT string ...");
 
 $token->isValid('expected-token-id'); // Returns true or false
@@ -123,39 +120,39 @@ $token->validate('expected-token-id'); // Throws exceptions for any validation f
  ```
  
  At this point you can be certain that the token:
-  
- 1) Has the expected ID
- 2) Is intended for your app (`aud` claim matches the configured audience)
- 3) Is signed, and the signature is verified (using the configured signature key)
- 4) Has an expiration claim, and has not yet expired 
- 
- ## Retrieving claims
- 
- Once you've parsed and validated a token, you can retrieve all token claims with `getClaims` or simply `toArray`. 
- 
- If you'd like to just retrieve your custom payload claims, use `getPayload`;
- 
- ```php
- // Make our string token
- $jwt = JWT::get('token-id', ['foo' => 'bar']);
- 
- // Parse it and validate
- $token = JWT::parse($jwt)->validate('token-id');
- 
- // Ignore registered claims, just get our custom claims
- $token->getPayload(); // [ foo => bar ]
- ```
- 
- Or to retrieve just one claim, use `get` passing in the name of the claim. You can optionally pass in a default value as the second parameter;
- 
- ```php
- $token->get("foo"); // bar
- 
- $token->get("invalid"); // null
- 
- $token->get("invalid", "quz"); // quz
- ```
- 
+
+1) Is signed, and the signature is verified (using the configured signature key)
+2) Is within the permitted timeframe (has not expired)
+3) Is intended for your app (`aud` claim matches the configured audience)
+4) Has the expected ID
+
+## Retrieving claims
+
+Once you've parsed and validated a token, you can retrieve all token claims with `getClaims` or simply `toArray`. 
+
+If you'd like to just retrieve your custom payload claims, use `getPayload`;
+
+```php
+// Make our string token
+$jwt = JWT::get('token-id', ['foo' => 'bar']);
+
+// Parse it and validate
+$token = JWT::parse($jwt)->validate('token-id');
+
+// Ignore registered claims, just get our custom claims
+$token->getPayload(); // [ foo => bar ]
+```
+
+Or to retrieve just one claim, use `get` passing in the name of the claim. You can optionally pass in a default value as the second parameter;
+
+```php
+$token->get("foo"); // bar
+
+$token->get("invalid"); // null
+
+$token->get("invalid", "quz"); // quz
+```
+
 ## Route middleware
 
 We frequently use JWTs to authorize a request. These are sometimes generated and consumed by the same app, but more frequently they are for cross-app authorization.
@@ -170,25 +167,25 @@ If a token is found in any of these locations it will be parsed and validated.
 
 ### Token ID
 
-By default the token ID will be expected to match the route name.
+By default, the token ID will be expected to match the route name.
 
 For example, with this following route the token will need an ID of `my.home`:
 
 ```php
-Route::get('/home', 'Controller@home')->name('my.home')->middleware('jwt');
+Route::get('/home', [Controller::class, 'home'])->name('my.home')->middleware('jwt');
 ```
 
-You can also specify the required ID by passing it as a middleware parameter:
+You can specify the required ID by passing it as a middleware parameter:
 
 ```php
-Route::get('/home', 'Controller@home')->middleware('jwt:expected-id');
+Route::get('/home', [Controller::class, 'home'])->middleware('jwt:expected-id');
 ```
 
 ## Access claims on request
 
 ### All token claims
 
-The Laravel `Request` has a `getClaim` macro on it so you can grab claims from anywhere.
+The Laravel `Request` has a `getClaim` macro on it, so you can grab claims from anywhere.
 
 Example when injecting `$request` into a controller method:
 
@@ -207,6 +204,6 @@ class Controller {
 
 The token payload (custom claims added to the JWT, not part of the core registered claim set) is merged onto the request attributes, so you can access these just like any other request attribute.
 
-If the JWT has a `foo` claim, you can directly access `$request->foo` or `$request->get('foo')` or even `request('foo')` using the global request helper.
+If the JWT has a `foo` claim, you can directly access `$request->foo` or `$request->input('foo')` or even `request('foo')` using the global request helper.
 
 _**Note**: When the payload is merged onto the request, there is a chance that we are stomping on some existing request attributes. Because we **really** trust the payload in a validated JWT, we prefer this behavior. However if you want to disable set `JWT_MERGE_PAYLOAD=false` in your .env file._  
