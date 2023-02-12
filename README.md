@@ -1,4 +1,4 @@
-![](https://user-images.githubusercontent.com/203749/218294314-302bd5bc-a991-4f4f-b6d0-152f3d0fb622.png)
+![](https://user-images.githubusercontent.com/203749/218332026-c858a5c5-357a-4cbb-bbfd-a6397b24a4c3.png)
 
 
 # Laravel JWT Tools
