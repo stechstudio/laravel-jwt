@@ -125,6 +125,16 @@ $token->validate('expected-token-id'); // Throws exceptions for any validation f
 3) Is intended for your app (`aud` claim matches the configured audience)
 4) Has the expected ID
 
+### Validation exceptions
+
+When calling `validate('expected-token-id')` the following exceptions will be thrown depending on the validation failure:
+
+- `STS\JWT\Exceptions\InvalidSignature`
+- `STS\JWT\Exceptions\TokenExpired`
+- `STS\JWT\Exceptions\InvalidAudience`
+- `STS\JWT\Exceptions\InvalidID`
+- `STS\JWT\Exceptions\ValidationException` will be used for any other types of validation failures.
+
 ## Retrieving claims
 
 Once you've parsed and validated a token, you can retrieve all token claims with `getClaims` or simply `toArray`. 
