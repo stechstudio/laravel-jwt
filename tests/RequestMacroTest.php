@@ -1,23 +1,26 @@
 <?php
 
-class RequestMacroTest extends \Orchestra\Testbench\TestCase
+use Orchestra\Testbench\TestCase;
+use STS\JWT\Facades\JWT;
+
+class RequestMacroTest extends TestCase
 {
-    protected function getPackageProviders($app)
+    protected function getPackageProviders($app): array
     {
         return [\STS\JWT\JWTServiceProvider::class];
     }
 
-    protected function getPackageAliases($app)
+    protected function getPackageAliases($app): array
     {
         return [
-            'JWT' => \STS\JWT\JWTFacade::class
+            'JWT' => \STS\JWT\Facades\JWT::class
         ];
     }
 
-    protected function getEnvironmentSetUp($app)
+    protected function getEnvironmentSetUp($app): void
     {
         $app['config']->set([
-            'jwt.key'      => 'thisissigningkey',
+            'jwt.key'      => 'thisissigningkeythisissigningkey',
             'jwt.audience' => 'myappaud',
             'jwt.issuer'   => 'myappiss'
         ]);

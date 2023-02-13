@@ -1,0 +1,11 @@
+version: 1
+
+environment:
+  php: 8.2
+
+pipeline:
+  - name: Setup
+    cmd: |
+      composer install --no-interaction --prefer-dist --optimize-autoloader
+  - name: Run Tests
+    cmd: phpunit

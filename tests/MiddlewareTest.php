@@ -1,23 +1,27 @@
 <?php
 
-class MiddlewareTest extends \Orchestra\Testbench\TestCase
+use Lcobucci\JWT\Validation\ConstraintViolation;
+use Orchestra\Testbench\TestCase;
+use STS\JWT\Facades\JWT;
+
+class MiddlewareTest extends TestCase
 {
-    protected function getPackageProviders($app)
+    protected function getPackageProviders($app): array
     {
         return [\STS\JWT\JWTServiceProvider::class];
     }
 
-    protected function getPackageAliases($app)
+    protected function getPackageAliases($app): array
     {
         return [
-            'JWT' => \STS\JWT\JWTFacade::class
+            'JWT' => \STS\JWT\Facades\JWT::class
         ];
     }
 
-    protected function getEnvironmentSetUp($app)
+    protected function getEnvironmentSetUp($app): void
     {
         $app['config']->set([
-            'jwt.key'      => 'thisissigningkey',
+            'jwt.key'      => 'thisissigningkeythisissigningkey',
             'jwt.audience' => 'myappaud',
             'jwt.issuer'   => 'myappiss'
         ]);
@@ -92,8 +96,8 @@ class MiddlewareTest extends \Orchestra\Testbench\TestCase
         // Change the route name and the JWT won't pass
         $route->action = ['as' => 'new.name'];
 
-        $this->expectException(\STS\JWT\Exceptions\JwtValidationException::class);
-        $this->expectExceptionMessage('JWT claim [jti] is invalid');
+        $this->expectException(ConstraintViolation::class);
+        $this->expectExceptionMessage('The token is not identified with the expected ID');
         $this->assertEquals("success", $middleware->handle($request, function() { return "success"; }));
     }
 
@@ -109,8 +113,8 @@ class MiddlewareTest extends \Orchestra\Testbench\TestCase
 
         $this->assertEquals("success", $middleware->handle($request, function() { return "success"; }, 'test-id'));
 
-        $this->expectException(\STS\JWT\Exceptions\JwtValidationException::class);
-        $this->expectExceptionMessage('JWT claim [jti] is invalid');
+        $this->expectException(ConstraintViolation::class);
+        $this->expectExceptionMessage('The token is not identified with the expected ID');
         $this->assertEquals("success", $middleware->handle($request, function() { return "success"; }, 'different-id'));
     }
 }
