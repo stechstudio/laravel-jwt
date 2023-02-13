@@ -7,6 +7,8 @@ use Carbon\CarbonImmutable;
 use DateTime;
 use DateTimeImmutable;
 use DateTimeInterface;
+use Illuminate\Support\Traits\Conditionable;
+use Illuminate\Support\Traits\ForwardsCalls;
 use Lcobucci\JWT\Encoding\ChainedFormatter;
 use Lcobucci\JWT\Encoding\JoseEncoder;
 use Lcobucci\JWT\Signer\Hmac\Sha256;
@@ -19,39 +21,18 @@ use Lcobucci\JWT\Token\Plain;
  */
 class Client
 {
+    use ForwardsCalls, Conditionable;
+
     protected Builder $builder;
-    protected string $signingKey;
-    protected bool $isSigned = false;
     protected array $configures = [];
 
     public function __construct(
-        protected string $defaultSigningKey,
+        protected string $signingKey,
         protected int|CarbonImmutable $lifetime,
         protected string $issuer,
         protected string $audience)
     {
-        $this->reset();
-    }
-
-    public function reset(): self
-    {
         $this->builder = new Builder(new JoseEncoder(), ChainedFormatter::default());
-        $this->lifetime($this->lifetime);
-        $this->configures = [];
-        $this->signingKey = $this->defaultSigningKey;
-        $this->isSigned = false;
-
-        return $this;
-    }
-
-    public function defaultAudience(): string
-    {
-        return $this->audience;
-    }
-
-    public function defaultIssuer(): string
-    {
-        return $this->issuer;
     }
 
     public function signWith(string $signingKey): self
@@ -66,44 +47,46 @@ class Client
         return $this->signingKey;
     }
 
+    public function audience(): string
+    {
+        return $this->audience;
+    }
+
+    public function issuer(): string
+    {
+        return $this->issuer;
+    }
+
     public function getToken(): Plain
     {
-        // Ensure we have an audience set
-        if (!in_array('permittedFor', $this->configures)) {
-            $this->builder->permittedFor($this->audience);
-        }
+        // Set our own default audience, issuer, and expiration if none has been set so far
+        in_array('permittedFor', $this->configures) || $this->permittedFor($this->audience());
+        in_array('issuedBy', $this->configures) || $this->issuedBy($this->issuer());
+        in_array('expiresAt', $this->configures) || $this->lifetime($this->lifetime);
 
-        // Ensure we have an issuer set
-        if (!in_array('issuedBy', $this->configures)) {
-            $this->builder->issuedBy($this->issuer);
-        }
-
-        $token = $this->builder->getToken(new Sha256(), InMemory::plainText($this->signingKey()));
-
-        $this->reset();
-
-        return $token;
+        return $this->builder->getToken(new Sha256(), InMemory::plainText($this->signingKey()));
     }
 
     public function __toString(): string
     {
-        return (string) $this->getToken();
+        return $this->getToken()->toString();
     }
 
-    public function expiresAt(DateTime|DateTimeImmutable $expiration): self
+    public function expiresAt(DateTimeInterface $expiration): self
     {
         if($expiration instanceof DateTime) {
             $expiration = DateTimeImmutable::createFromMutable($expiration);
         }
 
         $this->builder->expiresAt($expiration);
+        $this->configures[] = "expiresAt";
 
         return $this;
     }
 
-    public function lifetime(int $lifetime): self
+    public function lifetime(int $seconds): self
     {
-        $this->builder->expiresAt(CarbonImmutable::now()->addSeconds($lifetime));
+        $this->expiresAt(CarbonImmutable::now()->addSeconds($seconds));
 
         return $this;
     }
@@ -117,48 +100,23 @@ class Client
         return $this;
     }
 
-    public function get(string$id, array $claims = [], int|DateTimeInterface $lifetime = null, string $signingKey = null): string
+    public function get(string $id, array $claims = [], int|DateTimeInterface $lifetime = null, string $signingKey = null): string
     {
-        if ($signingKey !== null) {
-            $this->signWith($signingKey);
-        }
-
-        if(is_int($lifetime)) {
-            $this->lifetime($lifetime);
-        }
-
-        if($lifetime instanceof DateTimeInterface) {
-            $this->expiresAt($lifetime);
-        }
-
         return $this
+            ->when($signingKey !== null, fn() => $this->signWith($signingKey))
+            ->when(is_int($lifetime), fn() => $this->lifetime($lifetime))
+            ->when($lifetime instanceof DateTimeInterface, fn() => $this->expiresAt($lifetime))
             ->withClaims($claims)
             ->identifiedBy($id)
             ->getToken()
             ->toString();
     }
 
-    public function setAudience(string $audience): self
-    {
-        $this->builder->permittedFor($audience);
-        $this->claims[] = "aud";
-
-        return $this;
-    }
-
-    public function setIssuer(string $issuer)
-    {
-        $this->builder->issuedBy($issuer);
-        $this->claims[] = "iss";
-
-        return $this;
-    }
-
     public function __call(string $method, array $parameters): mixed
     {
         $this->configures[] = $method;
 
-        $result = call_user_func_array([$this->builder, $method], $parameters);
+        $result = $this->forwardCallTo($this->builder, $method, $parameters);
 
         return $result instanceof Builder
             ? $this

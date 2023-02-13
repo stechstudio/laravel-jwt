@@ -81,7 +81,7 @@ class ParsedToken
             new LooseValidAt(SystemClock::fromUTC()),
 
             // Optionally check that the token was intended for us
-            config('jwt.validate.audience') ? new PermittedFor(JWT::defaultAudience()) : null,
+            config('jwt.validate.audience') ? new PermittedFor(JWT::audience()) : null,
 
             // And finally that it has the correct ID
             new IdentifiedBy($id)
