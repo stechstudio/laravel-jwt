@@ -2,6 +2,7 @@
 
 use Lcobucci\JWT\Validation\ConstraintViolation;
 use Orchestra\Testbench\TestCase;
+use STS\JWT\Exceptions\InvalidID;
 use STS\JWT\Facades\JWT;
 
 class MiddlewareTest extends TestCase
@@ -96,7 +97,7 @@ class MiddlewareTest extends TestCase
         // Change the route name and the JWT won't pass
         $route->action = ['as' => 'new.name'];
 
-        $this->expectException(ConstraintViolation::class);
+        $this->expectException(InvalidID::class);
         $this->expectExceptionMessage('The token is not identified with the expected ID');
         $this->assertEquals("success", $middleware->handle($request, function() { return "success"; }));
     }
@@ -113,7 +114,7 @@ class MiddlewareTest extends TestCase
 
         $this->assertEquals("success", $middleware->handle($request, function() { return "success"; }, 'test-id'));
 
-        $this->expectException(ConstraintViolation::class);
+        $this->expectException(InvalidID::class);
         $this->expectExceptionMessage('The token is not identified with the expected ID');
         $this->assertEquals("success", $middleware->handle($request, function() { return "success"; }, 'different-id'));
     }

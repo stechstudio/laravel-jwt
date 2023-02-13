@@ -16,8 +16,8 @@ use Lcobucci\JWT\Validation\Constraint\PermittedFor;
 use Lcobucci\JWT\Validation\Constraint\SignedWith;
 use Lcobucci\JWT\Validation\RequiredConstraintsViolated;
 use Lcobucci\JWT\Validation\Validator;
-use STS\JWT\Exceptions\JwtExpiredException;
-use STS\JWT\Exceptions\JwtValidationException;
+use STS\JWT\Exceptions\TokenExpired;
+use STS\JWT\Exceptions\ValidationException;
 use Lcobucci\JWT\Token\Parser;
 use STS\JWT\Facades\JWT;
 
@@ -67,7 +67,7 @@ class ParsedToken
         try {
             return $this->validateAll($id, $signingKey);
         } catch (RequiredConstraintsViolated $e) {
-            throw Arr::first($e->violations());
+            throw ValidationException::factory(Arr::first($e->violations()), $this);
         }
     }
 

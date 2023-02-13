@@ -7,6 +7,10 @@ use Lcobucci\JWT\Signer\Hmac\Sha256;
 use Lcobucci\JWT\Signer\Key\InMemory;
 use Lcobucci\JWT\Token\Builder;
 use Lcobucci\JWT\Validation\ConstraintViolation;
+use STS\JWT\Exceptions\InvalidAudience;
+use STS\JWT\Exceptions\InvalidID;
+use STS\JWT\Exceptions\InvalidSignature;
+use STS\JWT\Exceptions\TokenExpired;
 use STS\JWT\Facades\JWT;
 
 class ValidationTest extends \Orchestra\Testbench\TestCase
@@ -68,7 +72,7 @@ class ValidationTest extends \Orchestra\Testbench\TestCase
 
         $this->assertFalse($token->isValid('test-id'));
 
-        $this->expectException(ConstraintViolation::class);
+        $this->expectException(TokenExpired::class);
         $this->expectExceptionMessage("The token is expired");
         $token->validate('test-id');
     }
@@ -80,7 +84,7 @@ class ValidationTest extends \Orchestra\Testbench\TestCase
 
         $this->assertFalse($token->isValid('different-id'));
 
-        $this->expectException(ConstraintViolation::class);
+        $this->expectException(InvalidID::class);
         $this->expectExceptionMessage("The token is not identified with the expected ID");
         $token->validate('different-id');
     }
@@ -92,7 +96,7 @@ class ValidationTest extends \Orchestra\Testbench\TestCase
 
         $this->assertFalse($token->isValid('test-id'));
 
-        $this->expectException(ConstraintViolation::class);
+        $this->expectException(InvalidAudience::class);
         $this->expectExceptionMessage("The token is not allowed to be used by this audience");
         $token->validate('test-id');
     }
@@ -104,7 +108,7 @@ class ValidationTest extends \Orchestra\Testbench\TestCase
 
         $this->assertFalse($token->isValid('test-id'));
 
-        $this->expectException(ConstraintViolation::class);
+        $this->expectException(InvalidSignature::class);
         $this->expectExceptionMessage("Token signature mismatch");
         $token->validate('test-id');
     }
@@ -131,7 +135,7 @@ class ValidationTest extends \Orchestra\Testbench\TestCase
 
         $this->assertFalse($token->isValid('test-id'));
 
-        $this->expectException(ConstraintViolation::class);
+        $this->expectException(InvalidAudience::class);
         $this->expectExceptionMessage("The token is not allowed to be used by this audience");
         $token->validate('test-id');
     }
@@ -147,7 +151,7 @@ class ValidationTest extends \Orchestra\Testbench\TestCase
 
         $this->assertFalse($token->isValid('test-id'));
 
-        $this->expectException(ConstraintViolation::class);
+        $this->expectException(InvalidID::class);
         $this->expectExceptionMessage("The token is not identified with the expected ID");
         $token->validate('test-id');
     }
