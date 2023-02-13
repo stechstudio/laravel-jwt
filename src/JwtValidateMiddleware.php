@@ -10,9 +10,8 @@ class JwtValidateMiddleware
 {
     public function handle(Request $request, Closure $next, $id = null)
     {
-        if ($id === null) {
-            $id = $request->route()->getName();
-        }
+        $id = $id ?? $request->route()->getName()
+            ?? throw new \RuntimeException("You must specify a route name or expected JWT ID to protect this route");
 
         $token = ParsedToken::fromString(
             $this->findJWT($request)
