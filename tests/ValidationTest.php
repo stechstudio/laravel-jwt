@@ -106,11 +106,11 @@ class ValidationTest extends \Orchestra\Testbench\TestCase
         /** @var \STS\JWT\ParsedToken $token */
         $token = JWT::parse(JWT::signWith("foobarfoobarfoobarfoobarfoobar!!")->get('test-id'));
 
-        $this->assertFalse($token->isValid('test-id'));
+        $this->assertFalse($token->isValid('test-id', 'thisissigningkeythisissigningkey'));
 
         $this->expectException(InvalidSignature::class);
         $this->expectExceptionMessage("Token signature mismatch");
-        $token->validate('test-id');
+        $token->validate('test-id', 'thisissigningkeythisissigningkey');
     }
 
     public function testPassAlternateSigningKey()
