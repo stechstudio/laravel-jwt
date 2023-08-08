@@ -148,6 +148,34 @@ class ClientTest extends \Orchestra\Testbench\TestCase
         );
     }
 
+    public function testDefaultTimestampFormatter()
+    {
+        $time = Carbon::now()->addMinutes(10);
+        $token = JWT::expiresAt($time)->getToken();
+
+        $parts = array_map('base64_decode', explode('.', $token->toString()));
+
+        $this->assertEquals(
+            $time->format('U.u'),
+            json_decode($parts[1])->exp
+        );
+    }
+
+    public function testUnixTimestampFormatter()
+    {
+        config(['jwt.chained_formatter' => ChainedFormatter::withUnixTimestampDates()]);
+
+        $time = Carbon::now()->addMinutes(10);
+        $token = JWT::expiresAt($time)->getToken();
+
+        $parts = array_map('base64_decode', explode('.', $token->toString()));
+
+        $this->assertEquals(
+            $time->format('U'),
+            json_decode($parts[1])->exp
+        );
+    }
+
     public function testQuickGet()
     {
         $jwt = JWT::get('test-id', ['foo' => 'bar'], 1800);
@@ -168,3 +196,4 @@ class ClientTest extends \Orchestra\Testbench\TestCase
         );
     }
 }
+
