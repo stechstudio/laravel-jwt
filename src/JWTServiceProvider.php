@@ -36,8 +36,13 @@ class JWTServiceProvider extends ServiceProvider
                 $key = base64_decode(substr($key, 7));
             }
 
+            $signer = config('jwt.signer');
+            $chainedFormatter = config('jwt.chained_formatter');
+
             return new Client(
                 $key,
+                new $signer(),
+                $chainedFormatter,
                 config('jwt.lifetime'),
                 config('jwt.issuer'),
                 config('jwt.audience')
