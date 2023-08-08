@@ -116,6 +116,38 @@ class ClientTest extends \Orchestra\Testbench\TestCase
         $this->assertTrue($token->isExpired(CarbonImmutable::now()->addMinutes(5)));
     }
 
+    public function testDefaultSigner()
+    {
+        $token = JWT::expiresAt(Carbon::now()->addMinutes(10))->getToken();
+
+        $this->assertTrue(
+            (new Validator())->validate(
+                $token,
+                new SignedWith(new Sha256(), InMemory::plainText("thisissigningkeythisissigningkey"))
+            )
+        );
+    }
+
+    public function testRsaSha256Signer()
+    {
+        $rsa = new \Lcobucci\JWT\Signer\Rsa\Sha256();
+        $privateKey = file_get_contents(__DIR__ . '/keys/jwtRS256.key');
+        $publicKey = InMemory::plainText(file_get_contents(__DIR__ . '/keys/jwtRS256.key.pub'));
+
+        config(['jwt.signer' => \Lcobucci\JWT\Signer\Rsa\Sha256::class]);
+
+        $token = JWT::get('test-id', ['foo' => 'bar'], 1800, $privateKey);
+
+        $parsedToken = (new Parser(new JoseEncoder()))->parse($token);
+
+        $this->assertTrue(
+            (new Validator())->validate(
+                $parsedToken,
+                new SignedWith($rsa, $publicKey)
+            )
+        );
+    }
+
     public function testQuickGet()
     {
         $jwt = JWT::get('test-id', ['foo' => 'bar'], 1800);
