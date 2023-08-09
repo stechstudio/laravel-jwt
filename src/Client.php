@@ -11,7 +11,7 @@ use Illuminate\Support\Traits\Conditionable;
 use Illuminate\Support\Traits\ForwardsCalls;
 use Lcobucci\JWT\Encoding\ChainedFormatter;
 use Lcobucci\JWT\Encoding\JoseEncoder;
-use Lcobucci\JWT\Signer\Hmac\Sha256;
+use Lcobucci\JWT\Signer;
 use Lcobucci\JWT\Signer\Key\InMemory;
 use Lcobucci\JWT\Token\Builder;
 use Lcobucci\JWT\Token\Plain;
@@ -28,11 +28,13 @@ class Client
 
     public function __construct(
         protected string $signingKey,
+        protected Signer $signer,
+        protected ChainedFormatter $chainedFormatter,
         protected int|CarbonImmutable $lifetime,
         protected string $issuer,
         protected string $audience)
     {
-        $this->builder = new Builder(new JoseEncoder(), ChainedFormatter::default());
+        $this->builder = new Builder(new JoseEncoder(), $this->chainedFormatter);
     }
 
     public function signWith(string $signingKey): self
@@ -64,7 +66,7 @@ class Client
         in_array('issuedBy', $this->configures) || $this->issuedBy($this->issuer());
         in_array('expiresAt', $this->configures) || $this->lifetime($this->lifetime);
 
-        return $this->builder->getToken(new Sha256(), InMemory::plainText($this->signingKey()));
+        return $this->builder->getToken($this->signer, InMemory::plainText($this->signingKey()));
     }
 
     public function __toString(): string
