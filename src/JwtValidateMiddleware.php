@@ -77,7 +77,7 @@ class JwtValidateMiddleware
         if (strpos($header, "Bearer") === 0) {
             list($tokenString) = sscanf($header, "Bearer %s");
             
-            return base64_decode($tokenString);
+            return $tokenString;
         }
 
         // Otherwise we expect the token to be specific directly (not encoded) with the "Token" label
