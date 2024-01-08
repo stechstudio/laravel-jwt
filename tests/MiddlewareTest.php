@@ -73,9 +73,12 @@ class MiddlewareTest extends TestCase
 
         $request = new \Illuminate\Http\Request();
         $request->headers->set('Authorization', 'Basic' . base64_encode('username:foobar'));
-
         $this->assertEquals("foobar", $middleware->findJWT($request));
 
+        $request = new \Illuminate\Http\Request();
+        $request->headers->set('Authorization', 'Bearer baz');
+        $this->assertEquals("baz", $middleware->findJWT($request));
+        
         $request = new \Illuminate\Http\Request();
         $request->headers->set('Authorization', 'Token baz');
         $this->assertEquals("baz", $middleware->findJWT($request));
