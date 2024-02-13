@@ -5,6 +5,7 @@ namespace STS\JWT;
 use Illuminate\Http\Request;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
+use Lcobucci\JWT\Encoding\ChainedFormatter;
 
 class JWTServiceProvider extends ServiceProvider
 {
@@ -37,7 +38,12 @@ class JWTServiceProvider extends ServiceProvider
             }
 
             $signer = config('jwt.signer');
-            $chainedFormatter = config('jwt.chained_formatter');
+
+            $chainedFormatter = match(true) {
+                config('jwt.chained_formatter') instanceof ChainedFormatter => config('jwt.chained_formatter'),
+                config('jwt.chained_formatter') === "unix" => ChainedFormatter::withUnixTimestampDates(),
+                default => ChainedFormatter::default()
+            };
 
             return new Client(
                 $key,

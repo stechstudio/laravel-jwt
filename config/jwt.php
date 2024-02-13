@@ -1,7 +1,5 @@
 <?php
 
-use Lcobucci\JWT\Encoding\ChainedFormatter;
-
 return [
     // Look for a dedicated signing key, fall back to app key
     'key' => env('JWT_SIGNING_KEY', env('APP_KEY')),
@@ -25,5 +23,5 @@ return [
         'audience' => env('JWT_VALIDATE_AUDIENCE', true),
     ],
 
-    'chained_formatter' => ChainedFormatter::default(),
+    'chained_formatter' => env('JWT_CHAINED_FORMATTER', 'default'),
 ];

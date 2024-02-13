@@ -32,4 +32,13 @@ class ConfigTest extends \Orchestra\Testbench\TestCase
 
         $this->assertEquals('thisisjwtkey', config('jwt.key'));
     }
+
+    public function testChainedFormatter()
+    {
+        putenv('JWT_CHAINED_FORMATTER=unix');
+
+        $this->refreshApplication();
+
+        $this->assertEquals('unix', config('jwt.chained_formatter'));
+    }
 }

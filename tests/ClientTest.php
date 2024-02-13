@@ -34,7 +34,7 @@ class ClientTest extends \Orchestra\Testbench\TestCase
             'issuer' => 'myappiss',
             'lifetime' => 900,
             'signer' => \Lcobucci\JWT\Signer\Hmac\Sha256::class,
-            'chained_formatter' => ChainedFormatter::default(),
+            'chained_formatter' => "default",
         ]]);
     }
 
