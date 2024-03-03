@@ -73,7 +73,7 @@ The default token issuer (`iss` claim) is your `APP_NAME` lowercase. You can spe
 
 **Audience**
 
-The default token audience (`aud` claim) is your `APP_NAME` lowercase. You can specify a different issuer name via `JWT_AUDIENCE`.
+The default token audience (`aud` claim) is your `APP_NAME` lowercase. You can specify a different audience name via `JWT_AUDIENCE`.
 
 ## Building tokens fluently
 
