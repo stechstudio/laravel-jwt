@@ -84,7 +84,7 @@ For more control over your token you can create it fluently instead.
 You can use any of the methods provided by the [underlying `Builder` class](https://lcobucci-jwt.readthedocs.io/en/latest/issuing-tokens/), along with a few new ones like `signWith` and `lifetime`.
 
 ```php
-$token = JWT::setId('my-token-id')
+$token = JWT::identifiedBy('my-token-id')
    ->lifetime(3600)
    ->signWith('custom-signing-key-with-256-bits')
    ->issuedBy("my-app")
