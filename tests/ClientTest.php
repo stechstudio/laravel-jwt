@@ -195,5 +195,46 @@ class ClientTest extends \Orchestra\Testbench\TestCase
             )
         );
     }
+
+    public function testQuickGetWithDateTimeLifetime()
+    {
+        $jwt = JWT::get('test-id', ['foo' => 'bar'], Carbon::now()->addHour());
+
+        $token = (new Parser(new JoseEncoder()))->parse($jwt);
+
+        $this->assertTrue($token->isIdentifiedBy('test-id'));
+        $this->assertEquals('bar', $token->claims()->get('foo'));
+        $this->assertFalse($token->isExpired(Carbon::now()->addMinutes(59)));
+        $this->assertTrue($token->isExpired(Carbon::now()->addMinutes(60)));
+    }
+
+    public function testBuilderStateAccumulatesAcrossCalls()
+    {
+        $token = JWT::identifiedBy('my-id')
+            ->permittedFor('custom-aud')
+            ->issuedBy('custom-iss')
+            ->withClaims(['foo' => 'bar', 'baz' => 'qux'])
+            ->lifetime(1800)
+            ->getToken();
+
+        $this->assertTrue($token->isIdentifiedBy('my-id'));
+        $this->assertTrue($token->isPermittedFor('custom-aud'));
+        $this->assertTrue($token->hasBeenIssuedBy('custom-iss'));
+        $this->assertEquals('bar', $token->claims()->get('foo'));
+        $this->assertEquals('qux', $token->claims()->get('baz'));
+        $this->assertFalse($token->isExpired(CarbonImmutable::now()->addMinutes(29)));
+        $this->assertTrue($token->isExpired(CarbonImmutable::now()->addMinutes(30)));
+    }
+
+    public function testToString()
+    {
+        $jwt = (string) JWT::identifiedBy('test-id');
+
+        $this->assertIsString($jwt);
+
+        $token = (new Parser(new JoseEncoder()))->parse($jwt);
+
+        $this->assertTrue($token->isIdentifiedBy('test-id'));
+    }
 }
 

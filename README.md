@@ -5,7 +5,7 @@
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/stechstudio/laravel-jwt.svg?style=flat-square)](https://packagist.org/packages/stechstudio/laravel-jwt)
 [![Software License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square)](LICENSE.md)
-![Build Status](https://img.shields.io/endpoint?url=https://app.chipperci.com/projects/dc325ad7-6039-4345-8e77-828492ba0bf1/status/v2&style=flat-square)
+![Tests](https://github.com/stechstudio/laravel-jwt/actions/workflows/tests.yml/badge.svg)
 
 This package wraps the excellent [lcobucci/jwt](https://github.com/lcobucci/jwt) library with the following benefits:
 

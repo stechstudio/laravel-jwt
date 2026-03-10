@@ -80,7 +80,7 @@ class Client
             $expiration = DateTimeImmutable::createFromMutable($expiration);
         }
 
-        $this->builder->expiresAt($expiration);
+        $this->builder = $this->builder->expiresAt($expiration);
         $this->configures[] = "expiresAt";
 
         return $this;
@@ -96,7 +96,7 @@ class Client
     public function withClaims(array $claims = []): self
     {
         foreach ($claims AS $key => $value) {
-            $this->builder->withClaim($key, $value);
+            $this->builder = $this->builder->withClaim($key, $value);
         }
 
         return $this;
@@ -120,9 +120,12 @@ class Client
 
         $result = $this->forwardCallTo($this->builder, $method, $parameters);
 
-        return $result instanceof Builder
-            ? $this
-            : $result;
+        if ($result instanceof Builder) {
+            $this->builder = $result;
+            return $this;
+        }
+
+        return $result;
     }
 
     public function parse(string $jwt): ParsedToken
