@@ -156,6 +156,20 @@ class ValidationTest extends \Orchestra\Testbench\TestCase
         $token->validate('test-id');
     }
 
+    public function testRsaSignerValidation()
+    {
+        $privateKey = file_get_contents(__DIR__ . '/keys/jwtRS256.key');
+        $publicKey = file_get_contents(__DIR__ . '/keys/jwtRS256.key.pub');
+
+        config(['jwt.signer' => \Lcobucci\JWT\Signer\Rsa\Sha256::class]);
+
+        $jwt = JWT::get('test-id', ['foo' => 'bar'], 1800, $privateKey);
+
+        $token = JWT::parse($jwt);
+
+        $this->assertTrue($token->isValid('test-id', $publicKey));
+    }
+
     public function testNoAudienceValidation()
     {
         config(['jwt.validate.audience' => false]);

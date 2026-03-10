@@ -7,7 +7,6 @@ use Exception;
 use Illuminate\Support\Arr;
 use Lcobucci\Clock\SystemClock;
 use Lcobucci\JWT\Encoding\JoseEncoder;
-use Lcobucci\JWT\Signer\Hmac\Sha256;
 use Lcobucci\JWT\Signer\Key\InMemory;
 use Lcobucci\JWT\Token\Plain;
 use Lcobucci\JWT\Validation\Constraint\IdentifiedBy;
@@ -75,7 +74,7 @@ class ParsedToken
     {
         return array_filter([
             // Check the signature first. If this isn't valid, nothing else matter.
-            new SignedWith(new Sha256(), InMemory::plainText($signingKey ?? JWT::signingKey())),
+            new SignedWith(new (config('jwt.signer'))(), InMemory::plainText($signingKey ?? JWT::signingKey())),
 
             // Check that we're withing the allowed timeframe
             new LooseValidAt(SystemClock::fromUTC()),
