@@ -15,6 +15,11 @@ This package wraps the excellent [lcobucci/jwt](https://github.com/lcobucci/jwt)
 4) HTTP Middleware to validate a route-specific JWT
 5) Request macro to easily access route-specific JWT claims
 
+## Requirements
+
+- PHP 8.2+
+- Laravel 11+
+
 ## Quickstart
 
 ### Installation
